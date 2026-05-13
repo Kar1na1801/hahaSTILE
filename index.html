@@ -46,7 +46,6 @@
       color: #9ba0b5;
     }
 
-    /* Сезонные карточки */
     .season-grid {
       display: flex;
       flex-direction: column;
@@ -84,7 +83,6 @@
       color: white;
     }
 
-    /* Горизонтальная галерея */
     .gallery-scroll {
       overflow-x: auto;
       overflow-y: hidden;
@@ -198,7 +196,6 @@
       color: #6e748c;
     }
 
-    /* Модальное окно для просмотра */
     .modal {
       display: none;
       position: fixed;
@@ -247,23 +244,43 @@
       border-radius: 30px;
       font-size: 0.8rem;
     }
+
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 20px;
+      right: 20px;
+      background: #2a2e3c;
+      color: white;
+      text-align: center;
+      padding: 12px;
+      border-radius: 40px;
+      font-size: 0.85rem;
+      z-index: 3000;
+      animation: fadeOut 2s forwards;
+    }
+
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      70% { opacity: 1; }
+      100% { opacity: 0; visibility: hidden; }
+    }
   </style>
 </head>
 <body>
 <div class="container">
   <header>
     <h1>Мой стиль по сезонам</h1>
-    <p class="sub">Любые фото — загружаются. Нажмите на фото для просмотра.</p>
+    <p class="sub">Нажмите «Добавить фото» → выберите из галереи → готово</p>
   </header>
 
   <div class="season-grid" id="seasonsGrid"></div>
 
   <footer>
-    📸 Все фото сохраняются в телефоне · Нет ограничений
+    📸 Фото сохраняются в телефоне · Работает с HEIC, JPEG, PNG
   </footer>
 </div>
 
-<!-- Модалка -->
 <div id="modal" class="modal">
   <button class="modal-close" id="modalClose">✕</button>
   <img id="modalImage" alt="просмотр">
@@ -280,7 +297,7 @@
       { id: 'autumn', name: 'Осень', emoji: '🍂' }
     ];
     
-    const STORAGE_KEY = 'closet_seasons_working';
+    const STORAGE_KEY = 'closet_iphone_fixed';
     
     let wardrobe = {
       summer: [],
@@ -289,14 +306,23 @@
       autumn: []
     };
     
-    // DOM
     const seasonsGrid = document.getElementById('seasonsGrid');
     const modal = document.getElementById('modal');
     const modalImage = document.getElementById('modalImage');
     const modalCaption = document.getElementById('modalCaption');
     const modalClose = document.getElementById('modalClose');
     
-    // ---------- Загрузка / сохранение ----------
+    // Уведомления
+    function showMessage(msg, isError = false) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.style.background = isError ? '#8b3a3a' : '#2a5f3a';
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 2500);
+    }
+    
+    // ---------- Работа с localStorage ----------
     function loadData() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -326,41 +352,80 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(wardrobe));
     }
     
-    // ---------- Работа с фото ----------
+    // ---------- ДОБАВЛЕНИЕ ФОТО - ГЛАВНАЯ ФУНКЦИЯ ----------
     function addPhotos(seasonId, files) {
-      if (!files || files.length === 0) return;
+      if (!files || files.length === 0) {
+        showMessage('Файлы не выбраны', true);
+        return;
+      }
       
-      const fileList = Array.from(files);
-      let loaded = 0;
+      const fileArray = Array.from(files);
+      let successCount = 0;
+      let processed = 0;
       
-      fileList.forEach(file => {
-        // Пытаемся прочитать ЛЮБОЙ файл как изображение
+      fileArray.forEach(file => {
+        // Читаем ЛЮБОЙ файл через FileReader
         const reader = new FileReader();
+        
         reader.onload = function(e) {
           const dataUrl = e.target.result;
           
-          // Добавляем фото
-          const newPhoto = {
-            id: Date.now() + '-' + Math.random().toString(36).substr(2, 8) + file.name,
-            url: dataUrl,
-            date: new Date().toISOString()
+          // Пробуем создать Image и проверить, что это реальное изображение
+          const testImg = new Image();
+          testImg.onload = function() {
+            // Это нормальная картинка
+            const newPhoto = {
+              id: Date.now() + '-' + Math.random().toString(36).substr(2, 10) + file.name,
+              url: dataUrl,
+              date: new Date().toISOString()
+            };
+            wardrobe[seasonId].unshift(newPhoto);
+            successCount++;
+            processed++;
+            
+            if (processed === fileArray.length) {
+              if (successCount > 0) {
+                saveData();
+                renderAll();
+                showMessage(`✅ Загружено ${successCount} фото`);
+              } else {
+                showMessage('❌ Не удалось загрузить файлы. Попробуйте другие фото', true);
+              }
+            }
           };
-          wardrobe[seasonId].unshift(newPhoto);
-          loaded++;
           
-          if (loaded === fileList.length) {
-            saveData();
-            renderAll();
-          }
+          testImg.onerror = function() {
+            // Не удалось распознать как изображение
+            console.warn('Файл не картинка:', file.name);
+            processed++;
+            if (processed === fileArray.length) {
+              if (successCount > 0) {
+                saveData();
+                renderAll();
+                showMessage(`✅ Загружено ${successCount} фото`);
+              } else {
+                showMessage('❌ Файлы не являются изображениями или повреждены', true);
+              }
+            }
+          };
+          
+          testImg.src = dataUrl;
         };
+        
         reader.onerror = function() {
-          // Если ошибка — просто пропускаем файл
-          loaded++;
-          if (loaded === fileList.length) {
-            saveData();
-            renderAll();
+          console.error('Ошибка чтения файла:', file.name);
+          processed++;
+          if (processed === fileArray.length) {
+            if (successCount > 0) {
+              saveData();
+              renderAll();
+              showMessage(`✅ Загружено ${successCount} фото`);
+            } else {
+              showMessage('❌ Ошибка чтения файлов', true);
+            }
           }
         };
+        
         reader.readAsDataURL(file);
       });
     }
@@ -369,14 +434,14 @@
       wardrobe[seasonId] = wardrobe[seasonId].filter(p => p.id != photoId);
       saveData();
       renderAll();
+      showMessage('Фото удалено');
     }
     
-    // Формат даты
     function formatDate(iso) {
       if (!iso) return 'недавно';
       const d = new Date(iso);
       const now = new Date();
-      const diff = Math.floor((now - d) / (86400000));
+      const diff = Math.floor((now - d) / 86400000);
       if (diff === 0) return 'сегодня';
       if (diff === 1) return 'вчера';
       if (diff < 7) return `${diff} дн.`;
@@ -393,113 +458,111 @@
         const photos = wardrobe[season.id] || [];
         const count = photos.length;
         
-        // Создаём карточку
         const card = document.createElement('div');
         card.className = 'card';
         card.setAttribute('data-season', season.id);
         
-        // Шапка
-        const headerHtml = `
-          <div class="card-header">
-            <h3>${season.emoji} ${season.name}</h3>
-            <span class="badge">${count} фото</span>
-          </div>
-        `;
-        
-        // Галерея
-        let galleryHtml = `<div class="gallery-scroll"><div class="gallery">`;
+        let galleryHtml = '';
         if (count === 0) {
-          galleryHtml = `<div class="empty-gallery">📸 Пока нет фото. Нажмите «Добавить фото»</div>`;
+          galleryHtml = `<div class="empty-gallery">📸 Нет фото. Нажмите «Добавить фото» и выберите из галереи</div>`;
         } else {
+          let galleryInner = '<div class="gallery-scroll"><div class="gallery">';
           for (let photo of photos) {
             const dateStr = formatDate(photo.date);
-            galleryHtml += `
-              <div class="photo-card" data-photo-id="${photo.id}" data-photo-url="${photo.url.replace(/"/g, '&quot;')}" data-season="${season.id}">
+            galleryInner += `
+              <div class="photo-card" data-photo-id="${photo.id}" data-photo-url="${escapeHtml(photo.url)}" data-season="${season.id}">
                 <img src="${photo.url}" alt="образ" loading="lazy">
                 <button class="delete-photo" data-photo-id="${photo.id}" data-season="${season.id}">✕</button>
                 <span class="photo-date">📅 ${dateStr}</span>
               </div>
             `;
           }
+          galleryInner += '</div></div>';
+          galleryHtml = galleryInner;
         }
-        galleryHtml += `</div></div>`;
         
-        // Кнопки
-        const actionsHtml = `
+        card.innerHTML = `
+          <div class="card-header">
+            <h3>${season.emoji} ${season.name}</h3>
+            <span class="badge">${count} фото</span>
+          </div>
+          ${galleryHtml}
           <div class="card-actions">
             <button class="btn-add add-btn" data-season="${season.id}">➕ Добавить фото</button>
             <span class="photo-count">📸 ${count} сохранено</span>
           </div>
         `;
         
-        card.innerHTML = headerHtml + galleryHtml + actionsHtml;
         seasonsGrid.appendChild(card);
       }
       
-      // Привязываем обработчики после рендера
-      attachEventHandlers();
+      // Привязываем обработчики
+      attachEvents();
     }
     
-    function attachEventHandlers() {
-      // Кнопки удаления
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    
+    function attachEvents() {
+      // Удаление
       document.querySelectorAll('.delete-photo').forEach(btn => {
-        btn.removeEventListener('click', handleDelete);
-        btn.addEventListener('click', handleDelete);
+        btn.removeEventListener('click', deleteHandler);
+        btn.addEventListener('click', deleteHandler);
       });
       
-      // Открытие модалки по клику на photo-card
+      // Открытие модалки
       document.querySelectorAll('.photo-card').forEach(card => {
-        card.removeEventListener('click', handlePhotoClick);
-        card.addEventListener('click', handlePhotoClick);
+        card.removeEventListener('click', openModalHandler);
+        card.addEventListener('click', openModalHandler);
       });
       
       // Кнопки добавления
       document.querySelectorAll('.add-btn').forEach(btn => {
-        btn.removeEventListener('click', handleAddClick);
-        btn.addEventListener('click', handleAddClick);
+        btn.removeEventListener('click', addHandler);
+        btn.addEventListener('click', addHandler);
       });
     }
     
-    function handleDelete(e) {
+    function deleteHandler(e) {
       e.stopPropagation();
-      const seasonId = e.currentTarget.getAttribute('data-season');
-      const photoId = e.currentTarget.getAttribute('data-photo-id');
+      const seasonId = this.getAttribute('data-season');
+      const photoId = this.getAttribute('data-photo-id');
       if (seasonId && photoId) {
         deletePhoto(seasonId, photoId);
       }
     }
     
-    function handlePhotoClick(e) {
-      // Если кликнули на кнопку удаления — не открываем
+    function openModalHandler(e) {
       if (e.target.classList && e.target.classList.contains('delete-photo')) return;
       
-      const photoDiv = e.currentTarget;
-      const imgSrc = photoDiv.querySelector('img')?.src;
-      const seasonName = getSeasonName(photoDiv.getAttribute('data-season'));
-      const dateSpan = photoDiv.querySelector('.photo-date')?.innerText || '';
+      const img = this.querySelector('img');
+      const seasonId = this.getAttribute('data-season');
+      const season = SEASONS.find(s => s.id === seasonId);
+      const dateSpan = this.querySelector('.photo-date')?.innerText || '';
       
-      if (imgSrc) {
-        modalImage.src = imgSrc;
-        modalCaption.innerText = `${seasonName} · ${dateSpan.replace('📅 ', '')}`;
+      if (img && img.src) {
+        modalImage.src = img.src;
+        modalCaption.innerText = `${season?.name || 'Образ'} · ${dateSpan.replace('📅 ', '')}`;
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
       }
     }
     
-    function handleAddClick(e) {
+    function addHandler(e) {
       e.stopPropagation();
-      const seasonId = e.currentTarget.getAttribute('data-season');
+      const seasonId = this.getAttribute('data-season');
       
-      // Создаём временный input
+      // Создаём input с поддержкой всех форматов на iPhone
       const input = document.createElement('input');
       input.type = 'file';
-      input.accept = 'image/*';
+      input.accept = 'image/jpeg,image/png,image/heic,image/heif,image/webp,image/*';
       input.multiple = true;
       input.style.display = 'none';
       document.body.appendChild(input);
       
       input.addEventListener('change', function onChange() {
-        if (input.files && input.files.length) {
+        if (input.files && input.files.length > 0) {
           addPhotos(seasonId, input.files);
         }
         input.removeEventListener('change', onChange);
@@ -507,11 +570,6 @@
       });
       
       input.click();
-    }
-    
-    function getSeasonName(seasonId) {
-      const s = SEASONS.find(s => s.id === seasonId);
-      return s ? s.name : 'образ';
     }
     
     // ---------- Модалка ----------
@@ -526,34 +584,35 @@
       if (e.target === modal) closeModal();
     });
     
-    // Drag & Drop на всю страницу (бонус)
+    // ---------- Drag & Drop ----------
     function setupDragDrop() {
-      document.body.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      });
-      document.body.addEventListener('dragenter', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      });
+      document.body.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+      document.body.addEventListener('dragenter', (e) => { e.preventDefault(); e.stopPropagation(); });
       document.body.addEventListener('drop', (e) => {
         e.preventDefault();
         e.stopPropagation();
         const files = e.dataTransfer.files;
         if (files && files.length) {
-          // Ищем ближайшую карточку
-          let targetCard = e.target.closest('.card');
-          if (targetCard) {
-            const seasonId = targetCard.getAttribute('data-season');
+          const card = e.target.closest('.card');
+          if (card) {
+            const seasonId = card.getAttribute('data-season');
             if (seasonId) addPhotos(seasonId, files);
           }
         }
       });
     }
     
-    // ---------- Старт ----------
+    // ---------- Запуск ----------
     loadData();
     setupDragDrop();
+    
+    // Проверка на первый запуск
+    setTimeout(() => {
+      const hasAny = SEASONS.some(s => wardrobe[s.id].length > 0);
+      if (!hasAny) {
+        showMessage('👋 Нажмите «Добавить фото» и выберите из галереи', false);
+      }
+    }, 500);
   })();
 </script>
 </body>
