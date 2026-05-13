@@ -1,687 +1,147 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-  <title>Гардероб-органайзер</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      background: #0f1115;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-      color: #e9e9ea;
-      padding: 16px 12px 32px;
-    }
-
-    .container {
-      max-width: 550px;
-      margin: 0 auto;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 20px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-    }
-
-    h1 {
-      font-size: 1.6rem;
-      font-weight: 600;
-      background: linear-gradient(135deg, #e0e0ff, #b0aaff);
-      background-clip: text;
-      -webkit-background-clip: text;
-      color: transparent;
-    }
-
-    .folders-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .folders-title {
-      font-size: 1rem;
-      font-weight: 500;
-      color: #b5bbcf;
-    }
-
-    .create-folder-btn {
-      background: #2a2e3c;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 30px;
-      color: #7aa2f7;
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-
-    .folders-list {
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-      padding-bottom: 12px;
-      margin-bottom: 20px;
-      scrollbar-width: thin;
-    }
-
-    .folder-tab {
-      background: #1a1e2a;
-      padding: 10px 18px;
-      border-radius: 40px;
-      font-size: 0.85rem;
-      white-space: nowrap;
-      cursor: pointer;
-      border: 1px solid rgba(255,255,255,0.05);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .folder-tab.active {
-      background: #7aa2f7;
-      color: #0b0e1a;
-    }
-
-    .folder-tab button {
-      background: none;
-      border: none;
-      font-size: 0.7rem;
-      cursor: pointer;
-      opacity: 0.7;
-      padding: 0 4px;
-    }
-
-    .folder-content {
-      background: linear-gradient(135deg, rgba(20,22,34,0.95), rgba(18,22,38,0.95));
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 24px;
-      padding: 16px;
-      margin-bottom: 20px;
-    }
-
-    .folder-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .current-folder-name {
-      font-size: 1.2rem;
-      font-weight: 600;
-    }
-
-    .add-photo-btn {
-      background: #7aa2f7;
-      border: none;
-      padding: 8px 18px;
-      border-radius: 40px;
-      font-weight: 600;
-      font-size: 0.8rem;
-      color: #0b0e1a;
-      cursor: pointer;
-    }
-
-    .photos-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    .photo-card {
-      background: #1a1e2a;
-      border-radius: 16px;
-      overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.08);
-      position: relative;
-    }
-
-    .photo-card img {
-      width: 100%;
-      aspect-ratio: 1;
-      object-fit: cover;
-      cursor: pointer;
-    }
-
-    .photo-actions {
-      padding: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .photo-buttons {
-      display: flex;
-      gap: 8px;
-    }
-
-    .photo-btn {
-      background: none;
-      border: none;
-      font-size: 1.1rem;
-      cursor: pointer;
-      padding: 4px;
-    }
-
-    .star-btn.active {
-      color: #ffd966;
-    }
-
-    .archive-btn {
-      color: #7aa2f7;
-    }
-
-    .delete-photo-btn {
-      color: #ff8a8a;
-    }
-
-    .move-folder-btn {
-      background: rgba(255,255,255,0.1);
-      border: none;
-      padding: 4px 8px;
-      border-radius: 20px;
-      font-size: 0.65rem;
-      cursor: pointer;
-    }
-
-    .archive-section {
-      margin-top: 20px;
-      border-top: 1px solid rgba(255,255,255,0.08);
-      padding-top: 12px;
-    }
-
-    .archive-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      padding: 8px 0;
-    }
-
-    .archive-icon {
-      font-size: 0.8rem;
-      transition: transform 0.2s;
-    }
-
-    .archive-header.open .archive-icon {
-      transform: rotate(90deg);
-    }
-
-    .archive-grid {
-      display: none;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-top: 12px;
-    }
-
-    .archive-grid.open {
-      display: grid;
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.9);
-      z-index: 2000;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .modal.active {
-      display: flex;
-    }
-
-    .modal-content {
-      background: #1a1e2a;
-      border-radius: 24px;
-      padding: 20px;
-      width: 280px;
-    }
-
-    .modal-content h4 {
-      margin-bottom: 12px;
-    }
-
-    .modal-folder-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 16px;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-
-    .modal-folder-item {
-      padding: 10px;
-      background: #0f1115;
-      border-radius: 12px;
-      cursor: pointer;
-    }
-
-    .modal-close {
-      background: #7aa2f7;
-      border: none;
-      padding: 8px;
-      border-radius: 30px;
-      width: 100%;
-      cursor: pointer;
-    }
-
-    .empty-photos {
-      grid-column: 1/-1;
-      text-align: center;
-      padding: 32px;
-      color: #888;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест загрузки фото - iPhone</title>
+    <style>
+        body {
+            background: #0f1115;
+            color: white;
+            font-family: system-ui;
+            padding: 20px;
+        }
+        button {
+            background: #7aa2f7;
+            border: none;
+            padding: 20px;
+            border-radius: 20px;
+            font-size: 18px;
+            width: 100%;
+            margin: 10px 0;
+        }
+        .log {
+            background: #1a1e2a;
+            padding: 10px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 11px;
+            margin-top: 20px;
+            max-height: 500px;
+            overflow: auto;
+            white-space: pre-wrap;
+        }
+        img {
+            max-width: 100px;
+            margin: 5px;
+            border-radius: 10px;
+        }
+    </style>
 </head>
 <body>
-<div class="container">
-  <header>
-    <h1>🎭 Гардероб-органайзер</h1>
-  </header>
+    <h2>🔧 ТЕСТ ЗАГРУЗКИ ФОТО</h2>
+    <button id="btn1">📷 1. ВЫБРАТЬ ФОТО (простой способ)</button>
+    <button id="btn2">📷 2. АЛЬТЕРНАТИВНЫЙ СПОСОБ</button>
+    <div id="gallery"></div>
+    <div class="log" id="log"></div>
 
-  <div class="folders-header">
-    <span class="folders-title">📁 Мои папки</span>
-    <button class="create-folder-btn" id="createFolderBtn">+ Новая папка</button>
-  </div>
-
-  <div class="folders-list" id="foldersList"></div>
-
-  <div class="folder-content">
-    <div class="folder-header">
-      <span class="current-folder-name" id="currentFolderName"></span>
-      <button class="add-photo-btn" id="addPhotoBtn">📷 Добавить фото</button>
-    </div>
-
-    <div id="activePhotosGrid" class="photos-grid"></div>
-
-    <div class="archive-section" id="archiveSection">
-      <div class="archive-header" id="archiveHeader">
-        <span class="archive-icon">▶</span>
-        <span>📦 Выполненные / Архив</span>
-        <span id="archiveCount" style="font-size:0.7rem; color:#888;"></span>
-      </div>
-      <div class="archive-grid" id="archiveGrid"></div>
-    </div>
-  </div>
-</div>
-
-<div id="moveModal" class="modal">
-  <div class="modal-content">
-    <h4>Переместить в папку:</h4>
-    <div id="moveFolderList" class="modal-folder-list"></div>
-    <button class="modal-close" id="closeModalBtn">Отмена</button>
-  </div>
-</div>
-
-<script>
-  (function() {
-    // === ДАННЫЕ ===
-    let folders = {};
-    let folderOrder = [];
-    let currentFolderId = null;
-    let pendingMove = { photoId: null, fromFolderId: null };
-
-    const STORAGE_KEY = 'wardrobe_organizer_final';
-
-    // === ИНИЦИАЛИЗАЦИЯ ===
-    function initDefault() {
-      const defaultId = 'folder_' + Date.now();
-      folders = {
-        [defaultId]: {
-          name: 'Мой гардероб',
-          photos: []
+    <script>
+        const logDiv = document.getElementById('log');
+        
+        function addLog(msg) {
+            const time = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div>[${time}] ${msg}</div>`;
+            console.log(msg);
+            logDiv.scrollTop = logDiv.scrollHeight;
         }
-      };
-      folderOrder = [defaultId];
-    }
 
-    function loadData() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          folders = data.folders || {};
-          folderOrder = data.folderOrder || [];
-          if (folderOrder.length === 0 || Object.keys(folders).length === 0) {
-            initDefault();
-          }
-        } catch(e) {
-          initDefault();
-        }
-      } else {
-        initDefault();
-      }
-      if (!currentFolderId && folderOrder.length) currentFolderId = folderOrder[0];
-      saveData();
-      renderAll();
-    }
-
-    function saveData() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ folders, folderOrder }));
-    }
-
-    function genId() {
-      return Date.now() + '-' + Math.random().toString(36).substr(2, 10);
-    }
-
-    // === РАБОТА С ФОТО ===
-    function addPhotos(files) {
-      if (!files || files.length === 0 || !currentFolderId) return;
-
-      const fileArray = Array.from(files);
-      let loaded = 0;
-
-      fileArray.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const newPhoto = {
-            id: genId(),
-            url: e.target.result,
-            date: Date.now(),
-            starred: false,
-            archived: false,
-            order: Date.now()
-          };
-          folders[currentFolderId].photos.unshift(newPhoto);
-          loaded++;
-          if (loaded === fileArray.length) {
-            reorderPhotos(currentFolderId);
-            saveData();
-            renderAll();
-          }
+        // Способ 1: стандартный
+        document.getElementById('btn1').onclick = () => {
+            addLog('🔘 Кнопка 1 нажата');
+            
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.multiple = true;
+            
+            input.onchange = (event) => {
+                addLog(`✅ onchange СРАБОТАЛ! Файлов: ${input.files.length}`);
+                
+                if (input.files.length === 0) {
+                    addLog('❌ Нет файлов');
+                    return;
+                }
+                
+                Array.from(input.files).forEach((file, i) => {
+                    addLog(`Файл ${i+1}: ${file.name}, ${Math.round(file.size/1024)}KB, тип: ${file.type}`);
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        addLog(`✅ Файл ${file.name} загружен! Длина: ${e.target.result.length}`);
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        document.getElementById('gallery').appendChild(img);
+                    };
+                    reader.onerror = (err) => {
+                        addLog(`❌ Ошибка: ${err}`);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+            
+            input.click();
+            addLog('⏳ Ожидаем выбора фото...');
         };
-        reader.onerror = () => {
-          loaded++;
-          if (loaded === fileArray.length) {
-            reorderPhotos(currentFolderId);
-            saveData();
-            renderAll();
-          }
+        
+        // Способ 2: через скрытый input + анимация
+        document.getElementById('btn2').onclick = () => {
+            addLog('🔘 Кнопка 2 нажата (альтернативный способ)');
+            
+            const input = document.getElementById('hiddenInput');
+            if (input) {
+                input.click();
+                return;
+            }
+            
+            const newInput = document.createElement('input');
+            newInput.type = 'file';
+            newInput.accept = 'image/*';
+            newInput.multiple = true;
+            newInput.id = 'hiddenInput';
+            newInput.style.position = 'absolute';
+            newInput.style.left = '-9999px';
+            document.body.appendChild(newInput);
+            
+            newInput.onchange = (event) => {
+                addLog(`✅ Альтернативный onchange сработал! Файлов: ${newInput.files.length}`);
+                
+                if (newInput.files.length === 0) {
+                    addLog('❌ Нет файлов');
+                    return;
+                }
+                
+                Array.from(newInput.files).forEach((file, i) => {
+                    addLog(`Файл ${i+1}: ${file.name}, ${Math.round(file.size/1024)}KB`);
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        addLog(`✅ Файл ${file.name} загружен!`);
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        document.getElementById('gallery').appendChild(img);
+                    };
+                    reader.onerror = (err) => {
+                        addLog(`❌ Ошибка: ${err}`);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+            
+            newInput.click();
+            addLog('⏳ Ожидаем выбора фото...');
         };
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function reorderPhotos(folderId) {
-      const photos = folders[folderId].photos;
-      photos.sort((a, b) => {
-        if (a.archived !== b.archived) return a.archived ? 1 : -1;
-        if (a.starred !== b.starred) return a.starred ? -1 : 1;
-        return (b.order || b.date) - (a.order || a.date);
-      });
-    }
-
-    function toggleStar(photoId, folderId) {
-      const photo = folders[folderId].photos.find(p => p.id == photoId);
-      if (photo) {
-        photo.starred = !photo.starred;
-        reorderPhotos(folderId);
-        saveData();
-        renderAll();
-      }
-    }
-
-    function toggleArchive(photoId, folderId) {
-      const photo = folders[folderId].photos.find(p => p.id == photoId);
-      if (photo) {
-        photo.archived = !photo.archived;
-        reorderPhotos(folderId);
-        saveData();
-        renderAll();
-      }
-    }
-
-    function deletePhoto(photoId, folderId) {
-      if (confirm('Удалить фото?')) {
-        folders[folderId].photos = folders[folderId].photos.filter(p => p.id != photoId);
-        saveData();
-        renderAll();
-      }
-    }
-
-    function movePhoto(photoId, fromFolderId, toFolderId) {
-      const photoIndex = folders[fromFolderId].photos.findIndex(p => p.id == photoId);
-      if (photoIndex === -1) return;
-      const photo = folders[fromFolderId].photos[photoIndex];
-      folders[fromFolderId].photos.splice(photoIndex, 1);
-      folders[toFolderId].photos.push(photo);
-      reorderPhotos(fromFolderId);
-      reorderPhotos(toFolderId);
-      saveData();
-      renderAll();
-    }
-
-    // === РАБОТА С ПАПКАМИ ===
-    function createFolder() {
-      let name = prompt('Название папки:', 'Новая папка');
-      if (!name || !name.trim()) name = 'Новая папка';
-      const newId = 'folder_' + genId();
-      folders[newId] = { name: name.trim(), photos: [] };
-      folderOrder.push(newId);
-      saveData();
-      currentFolderId = newId;
-      renderAll();
-    }
-
-    function renameFolder(folderId) {
-      const newName = prompt('Новое название:', folders[folderId].name);
-      if (newName && newName.trim()) {
-        folders[folderId].name = newName.trim();
-        saveData();
-        renderAll();
-      }
-    }
-
-    function deleteFolder(folderId) {
-      if (folderOrder.length === 1) {
-        alert('Нельзя удалить последнюю папку');
-        return;
-      }
-      if (confirm(`Удалить папку "${folders[folderId].name}" и все фото?`)) {
-        delete folders[folderId];
-        folderOrder = folderOrder.filter(id => id !== folderId);
-        currentFolderId = folderOrder[0];
-        saveData();
-        renderAll();
-      }
-    }
-
-    // === ОТРИСОВКА ===
-    function renderAll() {
-      renderFoldersList();
-      renderCurrentFolder();
-    }
-
-    function renderFoldersList() {
-      const container = document.getElementById('foldersList');
-      container.innerHTML = '';
-      folderOrder.forEach(fId => {
-        const folder = folders[fId];
-        if (!folder) return;
-        const tab = document.createElement('div');
-        tab.className = 'folder-tab' + (currentFolderId === fId ? ' active' : '');
-        tab.innerHTML = `
-          <span>📁 ${folder.name}</span>
-          <button class="rename-folder" data-id="${fId}">✏️</button>
-          <button class="delete-folder" data-id="${fId}">🗑</button>
-        `;
-        tab.onclick = (e) => {
-          if (e.target.classList.contains('rename-folder')) {
-            e.stopPropagation();
-            renameFolder(fId);
-          } else if (e.target.classList.contains('delete-folder')) {
-            e.stopPropagation();
-            deleteFolder(fId);
-          } else {
-            currentFolderId = fId;
-            renderAll();
-          }
-        };
-        container.appendChild(tab);
-      });
-    }
-
-    function renderCurrentFolder() {
-      if (!currentFolderId || !folders[currentFolderId]) return;
-      
-      const folder = folders[currentFolderId];
-      document.getElementById('currentFolderName').innerHTML = `📁 ${folder.name}`;
-      
-      const activePhotos = folder.photos.filter(p => !p.archived);
-      const archivedPhotos = folder.photos.filter(p => p.archived);
-      
-      // Активные фото
-      const activeGrid = document.getElementById('activePhotosGrid');
-      activeGrid.innerHTML = '';
-      if (activePhotos.length === 0) {
-        activeGrid.innerHTML = '<div class="empty-photos">📸 Нет фото. Нажмите "Добавить фото"</div>';
-      } else {
-        activePhotos.forEach(photo => {
-          activeGrid.appendChild(createPhotoCard(photo, currentFolderId));
-        });
-      }
-      
-      // Архив
-      const archiveCountSpan = document.getElementById('archiveCount');
-      archiveCountSpan.textContent = `(${archivedPhotos.length})`;
-      
-      const archiveGrid = document.getElementById('archiveGrid');
-      archiveGrid.innerHTML = '';
-      archivedPhotos.forEach(photo => {
-        archiveGrid.appendChild(createPhotoCard(photo, currentFolderId));
-      });
-      
-      // Переключатель архива
-      const archiveHeader = document.getElementById('archiveHeader');
-      const isOpen = archiveHeader.classList.contains('open');
-      if (isOpen) {
-        archiveGrid.classList.add('open');
-      } else {
-        archiveGrid.classList.remove('open');
-      }
-    }
-
-    function createPhotoCard(photo, folderId) {
-      const div = document.createElement('div');
-      div.className = 'photo-card';
-      
-      const date = new Date(photo.date);
-      const dateStr = `${date.getDate()}.${date.getMonth()+1}`;
-      
-      div.innerHTML = `
-        <img src="${photo.url}" onclick="window.open('${photo.url}', '_blank')">
-        <div class="photo-actions">
-          <div class="photo-buttons">
-            <button class="photo-btn star-btn ${photo.starred ? 'active' : ''}" data-action="star">⭐</button>
-            <button class="photo-btn archive-btn" data-action="archive">📦</button>
-            <button class="photo-btn delete-photo-btn" data-action="delete">🗑</button>
-          </div>
-          <button class="move-folder-btn" data-action="move">↗️ Переместить</button>
-          <span style="font-size:0.6rem; color:#666;">${dateStr}</span>
-        </div>
-      `;
-      
-      div.querySelector('[data-action="star"]').onclick = (e) => {
-        e.stopPropagation();
-        toggleStar(photo.id, folderId);
-      };
-      div.querySelector('[data-action="archive"]').onclick = (e) => {
-        e.stopPropagation();
-        toggleArchive(photo.id, folderId);
-      };
-      div.querySelector('[data-action="delete"]').onclick = (e) => {
-        e.stopPropagation();
-        deletePhoto(photo.id, folderId);
-      };
-      div.querySelector('[data-action="move"]').onclick = (e) => {
-        e.stopPropagation();
-        openMoveModal(photo.id, folderId);
-      };
-      
-      return div;
-    }
-
-    // === МОДАЛКА ПЕРЕМЕЩЕНИЯ ===
-    function openMoveModal(photoId, fromFolderId) {
-      pendingMove = { photoId, fromFolderId };
-      const modal = document.getElementById('moveModal');
-      const listDiv = document.getElementById('moveFolderList');
-      listDiv.innerHTML = '';
-      
-      folderOrder.forEach(fId => {
-        if (fId !== fromFolderId && folders[fId]) {
-          const btn = document.createElement('div');
-          btn.className = 'modal-folder-item';
-          btn.textContent = folders[fId].name;
-          btn.onclick = () => {
-            movePhoto(photoId, fromFolderId, fId);
-            modal.classList.remove('active');
-          };
-          listDiv.appendChild(btn);
-        }
-      });
-      
-      if (listDiv.children.length === 0) {
-        listDiv.innerHTML = '<div style="padding:10px; text-align:center;">Нет других папок</div>';
-      }
-      modal.classList.add('active');
-    }
-
-    // === СОБЫТИЯ ===
-    document.getElementById('createFolderBtn').onclick = () => createFolder();
-    
-    document.getElementById('addPhotoBtn').onclick = () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-      input.multiple = true;
-      input.onchange = (e) => {
-        if (input.files && input.files.length) {
-          addPhotos(input.files);
-        }
-      };
-      input.click();
-    };
-    
-    document.getElementById('archiveHeader').onclick = () => {
-      const header = document.getElementById('archiveHeader');
-      const grid = document.getElementById('archiveGrid');
-      header.classList.toggle('open');
-      if (header.classList.contains('open')) {
-        grid.classList.add('open');
-      } else {
-        grid.classList.remove('open');
-      }
-    };
-    
-    document.getElementById('closeModalBtn').onclick = () => {
-      document.getElementById('moveModal').classList.remove('active');
-    };
-    
-    // ЗАПУСК
-    loadData();
-  })();
-</script>
+        
+        addLog('✅ Страница загружена. Нажмите любую кнопку и выберите фото из галереи');
+    </script>
 </body>
 </html>
