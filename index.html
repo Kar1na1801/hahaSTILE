@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
+  <title>Мой стиль по сезонам</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: #0f1115;
+      font-family: system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+      color: #e9e9ea;
+      padding: 16px 12px 32px;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #e0e0ff, #b0aaff);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .sub {
+      font-size: 0.85rem;
+      color: #9ba0b5;
+    }
+
+    /* Сезонные карточки */
+    .season-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card {
+      background: linear-gradient(135deg, rgba(20,22,34,0.95), rgba(18,22,38,0.95));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 24px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.2);
+    }
+
+    .card-header h3 {
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      background: #2b324e;
+      padding: 4px 12px;
+      border-radius: 40px;
+      font-size: 0.75rem;
+      color: white;
+    }
+
+    /* Горизонтальная галерея */
+    .gallery-scroll {
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 16px;
+      white-space: nowrap;
+      scrollbar-width: thin;
+    }
+
+    .gallery-scroll::-webkit-scrollbar {
+      height: 4px;
+    }
+
+    .gallery {
+      display: inline-flex;
+      gap: 12px;
+    }
+
+    .photo-card {
+      position: relative;
+      display: inline-block;
+      width: 110px;
+      height: 110px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #1a1e2a;
+      border: 1px solid rgba(255,255,255,0.1);
+      cursor: pointer;
+    }
+
+    .photo-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .delete-photo {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(0,0,0,0.7);
+      border: none;
+      color: #ff8a8a;
+      width: 26px;
+      height: 26px;
+      border-radius: 20px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .photo-date {
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      background: rgba(0,0,0,0.6);
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 12px;
+      color: #ddd;
+    }
+
+    .empty-gallery {
+      padding: 32px 16px;
+      text-align: center;
+      color: #7e85a0;
+      font-size: 0.85rem;
+      white-space: normal;
+    }
+
+    .card-actions {
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.04);
+    }
+
+    .btn-add {
+      background: #7aa2f7;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #0b0e1a;
+      cursor: pointer;
+    }
+
+    .btn-add:active {
+      transform: scale(0.96);
+    }
+
+    .photo-count {
+      font-size: 0.7rem;
+      color: #b5bbcf;
+      background: rgba(255,255,255,0.05);
+      padding: 5px 12px;
+      border-radius: 30px;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      font-size: 0.7rem;
+      color: #6e748c;
+    }
+
+    /* Модальное окно для просмотра */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.95);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(12px);
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal img {
+      max-width: 90%;
+      max-height: 80%;
+      object-fit: contain;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      font-size: 28px;
+      width: 48px;
+      height: 48px;
+      border-radius: 30px;
+      cursor: pointer;
+    }
+
+    .modal-caption {
+      position: absolute;
+      bottom: 30px;
+      background: rgba(0,0,0,0.6);
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Мой стиль по сезонам</h1>
+    <p class="sub">Любые фото — загружаются. Нажмите на фото для просмотра.</p>
+  </header>
+
+  <div class="season-grid" id="seasonsGrid"></div>
+
+  <footer>
+    📸 Все фото сохраняются в телефоне · Нет ограничений
+  </footer>
+</div>
+
+<!-- Модалка -->
+<div id="modal" class="modal">
+  <button class="modal-close" id="modalClose">✕</button>
+  <img id="modalImage" alt="просмотр">
+  <div class="modal-caption" id="modalCaption"></div>
+</div>
+
+<script>
+  (function() {
+    // ---------- Данные ----------
+    const SEASONS = [
+      { id: 'summer', name: 'Лето', emoji: '☀️' },
+      { id: 'winter', name: 'Зима', emoji: '❄️' },
+      { id: 'spring', name: 'Весна', emoji: '🌸' },
+      { id: 'autumn', name: 'Осень', emoji: '🍂' }
+    ];
+    
+    const STORAGE_KEY = 'closet_seasons_working';
+    
+    let wardrobe = {
+      summer: [],
+      winter: [],
+      spring: [],
+      autumn: []
+    };
+    
+    // DOM
+    const seasonsGrid = document.getElementById('seasonsGrid');
+    const modal = document.getElementById('modal');
+    const modalImage = document.getElementById('modalImage');
+    const modalCaption = document.getElementById('modalCaption');
+    const modalClose = document.getElementById('modalClose');
+    
+    // ---------- Загрузка / сохранение ----------
+    function loadData() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          SEASONS.forEach(s => {
+            if (parsed[s.id] && Array.isArray(parsed[s.id])) {
+              wardrobe[s.id] = parsed[s.id];
+            } else {
+              wardrobe[s.id] = [];
+            }
+          });
+        } catch(e) {
+          resetData();
+        }
+      } else {
+        resetData();
+      }
+      renderAll();
+    }
+    
+    function resetData() {
+      wardrobe = { summer: [], winter: [], spring: [], autumn: [] };
+    }
+    
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(wardrobe));
+    }
+    
+    // ---------- Работа с фото ----------
+    function addPhotos(seasonId, files) {
+      if (!files || files.length === 0) return;
+      
+      const fileList = Array.from(files);
+      let loaded = 0;
+      
+      fileList.forEach(file => {
+        // Пытаемся прочитать ЛЮБОЙ файл как изображение
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const dataUrl = e.target.result;
+          
+          // Добавляем фото
+          const newPhoto = {
+            id: Date.now() + '-' + Math.random().toString(36).substr(2, 8) + file.name,
+            url: dataUrl,
+            date: new Date().toISOString()
+          };
+          wardrobe[seasonId].unshift(newPhoto);
+          loaded++;
+          
+          if (loaded === fileList.length) {
+            saveData();
+            renderAll();
+          }
+        };
+        reader.onerror = function() {
+          // Если ошибка — просто пропускаем файл
+          loaded++;
+          if (loaded === fileList.length) {
+            saveData();
+            renderAll();
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    
+    function deletePhoto(seasonId, photoId) {
+      wardrobe[seasonId] = wardrobe[seasonId].filter(p => p.id != photoId);
+      saveData();
+      renderAll();
+    }
+    
+    // Формат даты
+    function formatDate(iso) {
+      if (!iso) return 'недавно';
+      const d = new Date(iso);
+      const now = new Date();
+      const diff = Math.floor((now - d) / (86400000));
+      if (diff === 0) return 'сегодня';
+      if (diff === 1) return 'вчера';
+      if (diff < 7) return `${diff} дн.`;
+      if (diff < 30) return `${Math.floor(diff/7)} нед.`;
+      return d.toLocaleDateString('ru-RU', {day: 'numeric', month: 'short'});
+    }
+    
+    // ---------- Рендер ----------
+    function renderAll() {
+      if (!seasonsGrid) return;
+      seasonsGrid.innerHTML = '';
+      
+      for (let season of SEASONS) {
+        const photos = wardrobe[season.id] || [];
+        const count = photos.length;
+        
+        // Создаём карточку
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.setAttribute('data-season', season.id);
+        
+        // Шапка
+        const headerHtml = `
+          <div class="card-header">
+            <h3>${season.emoji} ${season.name}</h3>
+            <span class="badge">${count} фото</span>
+          </div>
+        `;
+        
+        // Галерея
+        let galleryHtml = `<div class="gallery-scroll"><div class="gallery">`;
+        if (count === 0) {
+          galleryHtml = `<div class="empty-gallery">📸 Пока нет фото. Нажмите «Добавить фото»</div>`;
+        } else {
+          for (let photo of photos) {
+            const dateStr = formatDate(photo.date);
+            galleryHtml += `
+              <div class="photo-card" data-photo-id="${photo.id}" data-photo-url="${photo.url.replace(/"/g, '&quot;')}" data-season="${season.id}">
+                <img src="${photo.url}" alt="образ" loading="lazy">
+                <button class="delete-photo" data-photo-id="${photo.id}" data-season="${season.id}">✕</button>
+                <span class="photo-date">📅 ${dateStr}</span>
+              </div>
+            `;
+          }
+        }
+        galleryHtml += `</div></div>`;
+        
+        // Кнопки
+        const actionsHtml = `
+          <div class="card-actions">
+            <button class="btn-add add-btn" data-season="${season.id}">➕ Добавить фото</button>
+            <span class="photo-count">📸 ${count} сохранено</span>
+          </div>
+        `;
+        
+        card.innerHTML = headerHtml + galleryHtml + actionsHtml;
+        seasonsGrid.appendChild(card);
+      }
+      
+      // Привязываем обработчики после рендера
+      attachEventHandlers();
+    }
+    
+    function attachEventHandlers() {
+      // Кнопки удаления
+      document.querySelectorAll('.delete-photo').forEach(btn => {
+        btn.removeEventListener('click', handleDelete);
+        btn.addEventListener('click', handleDelete);
+      });
+      
+      // Открытие модалки по клику на photo-card
+      document.querySelectorAll('.photo-card').forEach(card => {
+        card.removeEventListener('click', handlePhotoClick);
+        card.addEventListener('click', handlePhotoClick);
+      });
+      
+      // Кнопки добавления
+      document.querySelectorAll('.add-btn').forEach(btn => {
+        btn.removeEventListener('click', handleAddClick);
+        btn.addEventListener('click', handleAddClick);
+      });
+    }
+    
+    function handleDelete(e) {
+      e.stopPropagation();
+      const seasonId = e.currentTarget.getAttribute('data-season');
+      const photoId = e.currentTarget.getAttribute('data-photo-id');
+      if (seasonId && photoId) {
+        deletePhoto(seasonId, photoId);
+      }
+    }
+    
+    function handlePhotoClick(e) {
+      // Если кликнули на кнопку удаления — не открываем
+      if (e.target.classList && e.target.classList.contains('delete-photo')) return;
+      
+      const photoDiv = e.currentTarget;
+      const imgSrc = photoDiv.querySelector('img')?.src;
+      const seasonName = getSeasonName(photoDiv.getAttribute('data-season'));
+      const dateSpan = photoDiv.querySelector('.photo-date')?.innerText || '';
+      
+      if (imgSrc) {
+        modalImage.src = imgSrc;
+        modalCaption.innerText = `${seasonName} · ${dateSpan.replace('📅 ', '')}`;
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+    
+    function handleAddClick(e) {
+      e.stopPropagation();
+      const seasonId = e.currentTarget.getAttribute('data-season');
+      
+      // Создаём временный input
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.multiple = true;
+      input.style.display = 'none';
+      document.body.appendChild(input);
+      
+      input.addEventListener('change', function onChange() {
+        if (input.files && input.files.length) {
+          addPhotos(seasonId, input.files);
+        }
+        input.removeEventListener('change', onChange);
+        document.body.removeChild(input);
+      });
+      
+      input.click();
+    }
+    
+    function getSeasonName(seasonId) {
+      const s = SEASONS.find(s => s.id === seasonId);
+      return s ? s.name : 'образ';
+    }
+    
+    // ---------- Модалка ----------
+    function closeModal() {
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+      modalImage.src = '';
+    }
+    
+    modalClose.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+    
+    // Drag & Drop на всю страницу (бонус)
+    function setupDragDrop() {
+      document.body.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      document.body.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      document.body.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const files = e.dataTransfer.files;
+        if (files && files.length) {
+          // Ищем ближайшую карточку
+          let targetCard = e.target.closest('.card');
+          if (targetCard) {
+            const seasonId = targetCard.getAttribute('data-season');
+            if (seasonId) addPhotos(seasonId, files);
+          }
+        }
+      });
+    }
+    
+    // ---------- Старт ----------
+    loadData();
+    setupDragDrop();
+  })();
+</script>
+</body>
+</html>
