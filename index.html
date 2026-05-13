@@ -1,499 +1,409 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-  <title>Сезонный гардероб</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Мой стиль по сезонам — управляемые папки</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
+    :root{
+      --bg: #0f1115;
+      --card: #171a22;
+      --text: #e9e9ea;
+      --muted: #b5bbcf;
+      --accent: #7aa2f7;
+      --border: rgba(255,255,255,.08);
+      --done: #2e3a2f;
     }
 
-    body {
-      background: #0f1115;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-      color: #e9e9ea;
-      padding: 16px 12px 32px;
-    }
-
-    .container {
-      max-width: 700px;
-      margin: 0 auto;
-    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; background: var(--bg); color: var(--text); }
 
     header {
+      padding: 20px;
       text-align: center;
-      margin-bottom: 24px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
+      border-bottom: 1px solid var(--border);
     }
+    header h1 { margin: 0 0 6px; font-size: 1.6rem; }
+    header p { margin: 0; color: var(--muted); }
 
-    h1 {
-      font-size: 1.8rem;
-      font-weight: 600;
-      background: linear-gradient(135deg, #e0e0ff, #b0aaff);
-      background-clip: text;
-      -webkit-background-clip: text;
-      color: transparent;
-      margin-bottom: 6px;
-    }
+    .container { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
 
-    .sub {
-      font-size: 0.85rem;
-      color: #9ba0b5;
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+
+    .input, .select {
+      background: #1e2030;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 12px;
     }
 
     .season-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
     }
 
     .card {
-      background: linear-gradient(135deg, rgba(20,22,34,0.95), rgba(18,22,38,0.95));
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 24px;
-      overflow: hidden;
-    }
-
-    .card-header {
-      padding: 14px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      background: rgba(0,0,0,0.2);
-    }
-
-    .card-header h3 {
-      font-size: 1.2rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .badge {
-      background: #2b324e;
-      padding: 4px 12px;
-      border-radius: 40px;
-      font-size: 0.75rem;
-      color: white;
-    }
-
-    .gallery-scroll {
-      overflow-x: auto;
-      overflow-y: hidden;
-      padding: 16px;
-      white-space: nowrap;
-      scrollbar-width: thin;
-    }
-
-    .gallery-scroll::-webkit-scrollbar {
-      height: 4px;
-    }
-
-    .gallery {
-      display: inline-flex;
-      gap: 12px;
-    }
-
-    .photo-card {
-      position: relative;
-      display: inline-block;
-      width: 110px;
-      height: 110px;
-      border-radius: 16px;
-      overflow: hidden;
-      background: #1a1e2a;
-      border: 1px solid rgba(255,255,255,0.1);
-      cursor: pointer;
-    }
-
-    .photo-card img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .delete-photo {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      background: rgba(0,0,0,0.7);
-      border: none;
-      color: #ff8a8a;
-      width: 26px;
-      height: 26px;
-      border-radius: 20px;
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 2;
-    }
-
-    .photo-date {
-      position: absolute;
-      bottom: 6px;
-      left: 6px;
-      background: rgba(0,0,0,0.6);
-      font-size: 9px;
-      padding: 2px 6px;
+      background: linear-gradient(135deg, rgba(20,22,34,.95), rgba(18,22,38,.95));
+      border: 1px solid var(--border);
       border-radius: 12px;
-      color: #ddd;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 240px;
     }
-
-    .empty-gallery {
-      padding: 32px 16px;
-      text-align: center;
-      color: #7e85a0;
-      font-size: 0.85rem;
-      white-space: normal;
-    }
-
-    .card-actions {
-      padding: 12px 16px;
+    .card-header {
+      padding: 12px 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-top: 1px solid rgba(255,255,255,0.08);
-      background: rgba(0,0,0,0.04);
+      border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,.05);
     }
+    .card-header h3 { margin: 0; font-size: 1rem; }
+    .badge { font-size: 0.75rem; padding: 4px 8px; border-radius: 999px; background: #2b324e; color: #fff; }
 
-    .btn-add {
-      background: #7aa2f7;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 40px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      color: #0b0e1a;
-      cursor: pointer;
-      transition: 0.1s;
-    }
+    .gallery { padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; }
+    .gallery .thumb { width: 100%; height: 72px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); background:#111; }
 
-    .btn-add:active {
-      transform: scale(0.96);
-    }
+    .card-body { padding: 0 14px 12px; display: none; } /* прячем содержимое по умолчанию, можно развёрнуть по кнопке "Показать" */
 
-    .photo-count {
-      font-size: 0.7rem;
-      color: #b5bbcf;
-      background: rgba(255,255,255,0.05);
-      padding: 5px 12px;
-      border-radius: 30px;
-    }
+    .card-actions { padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); background: rgba(0,0,0,.04); }
+    .btn { background: var(--accent); color: #0b0e1a; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .btn.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .row { display: flex; gap: 6px; align-items: center; }
 
-    footer {
-      text-align: center;
-      margin-top: 32px;
-      padding-top: 20px;
-      border-top: 1px solid rgba(255,255,255,0.08);
-      font-size: 0.7rem;
-      color: #6e748c;
-    }
+    .section-title { margin: 0 0 8px; font-size: 1.05rem; }
 
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.95);
-      z-index: 2000;
-      justify-content: center;
-      align-items: center;
-      backdrop-filter: blur(12px);
-    }
+    details[open] .card-body { display: block; }
 
-    .modal.active {
-      display: flex;
-    }
+    /* простая кнопка добавления новой папки */
+    .new-folder { display: flex; gap: 8px; align-items: center; }
 
-    .modal img {
-      max-width: 90%;
-      max-height: 80%;
-      object-fit: contain;
-      border-radius: 20px;
-    }
-
-    .modal-close {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: rgba(255,255,255,0.2);
-      border: none;
-      color: white;
-      font-size: 28px;
-      width: 48px;
-      height: 48px;
-      border-radius: 30px;
-      cursor: pointer;
-    }
-
-    .modal-caption {
-      position: absolute;
-      bottom: 30px;
-      background: rgba(0,0,0,0.6);
-      padding: 8px 16px;
-      border-radius: 30px;
-      font-size: 0.8rem;
+    @media (max-width: 600px){
+      .gallery .thumb { height: 60px; }
     }
   </style>
 </head>
 <body>
-<div class="container">
   <header>
-    <h1>Мой стиль по сезонам</h1>
-    <p class="sub">Нажмите «Добавить фото» → выберите из галереи</p>
+    <h1>Мой стиль по сезонам с папками</h1>
+    <p>Добавляйте свои папки, загружайте фото, сортируйте по дате, помечайте выполненные и управляйте порядком.</p>
   </header>
 
-  <div class="season-grid" id="seasonsGrid"></div>
+  <main class="container">
+    <section aria-labelledby="controls-title" class="controls">
+      <h2 id="controls-title" class="section-title" style="display:none;">Управление</h2>
+      <div class="toolbar" aria-label="Панель управления">
+        <div class="row">
+          <input id="newFolderName" class="input" placeholder="Название новой папки" />
+          <button id="btnAddFolder" class="btn" type="button">Добавить папку</button>
+        </div>
+        <button id="btnExport" class="btn secondary" type="button">Экспорт/Импорт</button>
+      </div>
+    </section>
 
-  <footer>
-    📸 Фото сохраняются в телефоне · GitHub Pages
-  </footer>
-</div>
+    <section aria-labelledby="season-label" class="season-section">
+      <h2 id="season-label" style="font-size:1.1rem; margin:0 0 12px;">Папки и фото</h2>
 
-<div id="modal" class="modal">
-  <button class="modal-close" id="modalClose">✕</button>
-  <img id="modalImage" alt="просмотр">
-  <div class="modal-caption" id="modalCaption"></div>
-</div>
+      <div id="season-grid" class="season-grid"></div>
+    </section>
 
-<script>
-  (function() {
-    // Сезоны
-    const SEASONS = [
-      { id: 'summer', name: 'Лето', emoji: '☀️' },
-      { id: 'winter', name: 'Зима', emoji: '❄️' },
-      { id: 'spring', name: 'Весна', emoji: '🌸' },
-      { id: 'autumn', name: 'Осень', emoji: '🍂' }
-    ];
-    
-    const STORAGE_KEY = 'wardrobe_app';
-    
-    let data = {
-      summer: [],
-      winter: [],
-      spring: [],
-      autumn: []
-    };
-    
-    const seasonsGrid = document.getElementById('seasonsGrid');
-    const modal = document.getElementById('modal');
-    const modalImage = document.getElementById('modalImage');
-    const modalCaption = document.getElementById('modalCaption');
-    const modalClose = document.getElementById('modalClose');
-    
-    // Загрузка сохранённых фото
-    function loadData() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          SEASONS.forEach(s => {
-            if (parsed[s.id]) data[s.id] = parsed[s.id];
-          });
-        } catch(e) {}
-      }
-      render();
+  </main>
+
+  <script>
+    // Структура данных:
+    // data = {
+    //   folders: [
+    //     {
+    //       id: 'f1', name: 'Лето', created: timestamp,
+    //       photos: [
+    //         { id:'p1', src:'url', date: timestamp, done:false, important: 0, note: '' }
+    //       ]
+    //     }, ...
+    //   ]
+    // }
+
+    const STORAGE_KEY = 'fashion_albums_v1';
+    let data = { folders: [] };
+
+    // Поддержка id генератора
+    const uid = () => 'id-' + Math.random().toString(36).slice(2,9);
+
+    // Сохранение и загрузка
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) data = JSON.parse(raw);
+      } catch (e) { console.warn('Не удалось загрузить данные', e); }
     }
-    
-    // Сохранение
-    function saveData() {
+    function save() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
-    
-    // Добавление фото
-    function addPhotos(seasonId, files) {
-      if (!files || files.length === 0) return;
-      
-      const fileArray = Array.from(files);
-      let loaded = 0;
-      
-      fileArray.forEach(file => {
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-          const photo = {
-            id: Date.now() + '-' + Math.random().toString(36).substr(2, 8),
-            url: e.target.result,
-            date: new Date().toISOString()
-          };
-          data[seasonId].unshift(photo);
-          loaded++;
-          
-          if (loaded === fileArray.length) {
-            saveData();
-            render();
-          }
-        };
-        
-        reader.onerror = function() {
-          loaded++;
-          if (loaded === fileArray.length) {
-            saveData();
-            render();
-          }
-        };
-        
-        reader.readAsDataURL(file);
-      });
-    }
-    
-    // Удаление
-    function deletePhoto(seasonId, photoId) {
-      data[seasonId] = data[seasonId].filter(p => p.id != photoId);
-      saveData();
+
+    // Текущие представления
+    const grid = document.getElementById('season-grid');
+    const newFolderInput = document.getElementById('newFolderName');
+    document.getElementById('btnAddFolder').addEventListener('click', () => {
+      const name = newFolderInput.value.trim();
+      if (!name) return;
+      addFolder(name);
+      newFolderInput.value = '';
       render();
-    }
-    
-    // Формат даты
-    function formatDate(iso) {
-      if (!iso) return 'недавно';
-      const d = new Date(iso);
-      const now = new Date();
-      const diff = Math.floor((now - d) / 86400000);
-      if (diff === 0) return 'сегодня';
-      if (diff === 1) return 'вчера';
-      if (diff < 7) return `${diff} дн.`;
-      return d.toLocaleDateString('ru-RU', {day: 'numeric', month: 'short'});
-    }
-    
-    // Отрисовка
-    function render() {
-      if (!seasonsGrid) return;
-      seasonsGrid.innerHTML = '';
-      
-      for (let season of SEASONS) {
-        const photos = data[season.id];
-        const count = photos.length;
-        
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.setAttribute('data-season', season.id);
-        
-        let galleryHtml = '';
-        if (count === 0) {
-          galleryHtml = `<div class="empty-gallery">📸 Нет фото. Нажмите «Добавить фото»</div>`;
-        } else {
-          let items = '';
-          for (let photo of photos) {
-            items += `
-              <div class="photo-card" data-photo-id="${photo.id}" data-photo-url="${photo.url.replace(/"/g, '&quot;')}" data-season="${season.id}">
-                <img src="${photo.url}" loading="lazy">
-                <button class="delete-photo" data-photo-id="${photo.id}" data-season="${season.id}">✕</button>
-                <span class="photo-date">📅 ${formatDate(photo.date)}</span>
-              </div>
-            `;
-          }
-          galleryHtml = `<div class="gallery-scroll"><div class="gallery">${items}</div></div>`;
-        }
-        
-        card.innerHTML = `
-          <div class="card-header">
-            <h3>${season.emoji} ${season.name}</h3>
-            <span class="badge">${count} фото</span>
-          </div>
-          ${galleryHtml}
-          <div class="card-actions">
-            <button class="btn-add" data-season="${season.id}">➕ Добавить фото</button>
-            <span class="photo-count">📸 ${count} сохранено</span>
-          </div>
-        `;
-        
-        seasonsGrid.appendChild(card);
-      }
-      
-      attachEvents();
-    }
-    
-    function attachEvents() {
-      // Удаление
-      document.querySelectorAll('.delete-photo').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const seasonId = btn.getAttribute('data-season');
-          const photoId = btn.getAttribute('data-photo-id');
-          if (seasonId && photoId) deletePhoto(seasonId, photoId);
-        };
+      save();
+    });
+
+    // Добавление папки
+    function addFolder(name) {
+      data.folders.push({
+        id: uid(),
+        name,
+        created: Date.now(),
+        photos: []
       });
-      
-      // Открытие фото
-      document.querySelectorAll('.photo-card').forEach(card => {
-        card.onclick = (e) => {
-          if (e.target.classList && e.target.classList.contains('delete-photo')) return;
-          const img = card.querySelector('img');
-          const seasonId = card.getAttribute('data-season');
-          const season = SEASONS.find(s => s.id === seasonId);
-          if (img && img.src) {
-            modalImage.src = img.src;
-            modalCaption.innerText = season?.name || 'Фото';
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-          }
-        };
-      });
-      
-      // Добавление фото
-      document.querySelectorAll('.btn-add').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const seasonId = btn.getAttribute('data-season');
-          
-          const input = document.createElement('input');
-          input.type = 'file';
-          input.accept = 'image/*';
-          input.multiple = true;
-          input.style.display = 'none';
-          document.body.appendChild(input);
-          
-          input.onchange = () => {
-            if (input.files && input.files.length) {
-              addPhotos(seasonId, input.files);
-            }
-            document.body.removeChild(input);
+    }
+
+    // Простейшая загрузка файлов (через input[type=file] внутри карточки)
+    function createFileInput(forFolderId) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.multiple = true;
+      input.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []);
+        for (const file of files) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            addPhoto(forFolderId, reader.result);
+            render();
+            save();
           };
-          
-          input.click();
-        };
+          reader.readAsDataURL(file);
+        }
+        // сбросим значение чтобы можно было выбрать заново
+        input.value = '';
+      });
+      // нажмите на кнопку, чтобы открыть файл-диалог
+      return input;
+    }
+
+    // Добавление фото в папку (dataURL)
+    function addPhoto(folderId, dataURL) {
+      const folder = data.find(f => f.id === folderId);
+      if (!folder) return;
+      folder.photos.push({
+        id: uid(),
+        src: dataURL,
+        date: Date.now(),
+        done: false,
+        important: 0
+      });
+      // сортировка по дате добавления (возраста)
+      folder.photos.sort((a,b) => a.date - b.date);
+    }
+
+    // Удаление фото
+    function deletePhoto(folderId, photoId) {
+      const f = data.folders.find(x => x.id === folderId);
+      if (!f) return;
+      f.photos = f.photos.filter(p => p.id !== photoId);
+    }
+
+    // Перемещение фото между папками
+    function movePhoto(photoId, fromFolderId, toFolderId) {
+      const from = data.folders.find(f => f.id === fromFolderId);
+      const to = data.folders.find(f => f.id === toFolderId);
+      if (!from || !to) return;
+      const idx = from.photos.findIndex(p => p.id === photoId);
+      if (idx < 0) return;
+      const [ph] = from.photos.splice(idx, 1);
+      // добавляем в конец новой папки
+      to.photos.push(ph);
+      // пересортируем
+      to.photos.sort((a,b) => a.date - b.date);
+    }
+
+    // Изменение порядка по важности (механизм прост: 'move up/down' по индексу)
+    function reorderPhoto(folderId, photoId, direction) {
+      const f = data.folders.find(x => x.id === folderId);
+      if (!f) return;
+      const idx = f.photos.findIndex(p => p.id === photoId);
+      if (idx < 0) return;
+      const newIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (newIdx < 0 || newIdx >= f.photos.length) return;
+      // обмен местами
+      const tmp = f.photos[idx];
+      f.photos[idx] = f.photos[newIdx];
+      f.photos[newIdx] = tmp;
+    }
+
+    // отмечать как выполненное
+    function toggleDone(folderId, photoId) {
+      const f = data.folders.find(x => x.id === folderId);
+      if (!f) return;
+      const p = f.photos.find(x => x.id === photoId);
+      if (!p) return;
+      p.done = !p.done;
+      // порядок: выполненные скрывать вниз
+      f.photos.sort((a,b) => Number(a.done) - Number(b.done) || a.date - b.date);
+    }
+
+    // Рендер
+    function render() {
+      grid.innerHTML = '';
+      data.folders.forEach(folder => {
+        // детали папки
+        const card = document.createElement('section');
+        card.className = 'card';
+        // header
+        const header = document.createElement('div');
+        header.className = 'card-header';
+        const title = document.createElement('h3');
+        title.textContent = folder.name;
+        const badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.textContent = folder.photos.filter(p => !p.done).length + ' фото';
+        header.appendChild(title);
+        header.appendChild(badge);
+
+        // тело галереи
+        const body = document.createElement('div');
+        body.className = 'card-body';
+
+        // Галерея
+        const gallery = document.createElement('div');
+        gallery.className = 'gallery';
+        // фотографии, сначала невыполненные, затем выполненные спрятать (по умолчанию скроем выпол. через collapsible)
+        const visiblePhotos = folder.photos.filter(p => !p.done);
+        const hiddenPhotos = folder.photos.filter(p => p.done);
+
+        // показать невыполненные
+        visiblePhotos.forEach(p => {
+          const img = document.createElement('img');
+          img.className = 'thumb';
+          img.src = p.src;
+          img.alt = 'Фото';
+          // контекстное меню действий
+          const wrap = document.createElement('div');
+          wrap.style.position = 'relative';
+          wrap.appendChild(img);
+
+          // кнопки управления на фото
+          const actions = document.createElement('div');
+          actions.style.position = 'absolute';
+          actions.style.bottom = '6px';
+          actions.style.left = '6px';
+          actions.style.right = '6px';
+          actions.style.display = 'flex';
+          actions.style.gap = '6px';
+          actions.style.opacity = '0.95';
+          const up = document.createElement('button');
+          up.textContent = '↑';
+          up.className = 'btn secondary';
+          up.style.padding = '4px 6px';
+          up.addEventListener('click', () => reorderPhoto(folder.id, p.id, 'up'));
+          const down = document.createElement('button');
+          down.textContent = '↓';
+          down.className = 'btn secondary';
+          down.style.padding = '4px 6px';
+          down.addEventListener('click', () => reorderPhoto(folder.id, p.id, 'down'));
+          const doneBtn = document.createElement('button');
+          doneBtn.textContent = p.done ? 'Вып.' : 'Выполнить';
+          doneBtn.className = 'btn secondary';
+          doneBtn.style.padding = '4px 6px';
+          doneBtn.addEventListener('click', () => toggleDone(folder.id, p.id));
+          const del = document.createElement('button');
+          del.textContent = 'Удалить';
+          del.className = 'btn secondary';
+          del.style.padding = '4px 6px';
+          del.addEventListener('click', () => { deletePhoto(folder.id, p.id); render(); save(); });
+
+          actions.appendChild(up); actions.appendChild(down); actions.appendChild(doneBtn); actions.appendChild(del);
+          wrap.appendChild(actions);
+          gallery.appendChild(wrap);
+        });
+
+        // разворачиваем скрытое (выполненные) по кнопке
+        if (hiddenPhotos.length > 0) {
+          const details = document.createElement('details');
+          const summary = document.createElement('summary');
+          summary.textContent = 'Показать выполненные (' + hiddenPhotos.length + ')';
+          details.appendChild(summary);
+          const hiddenGrid = document.createElement('div');
+          hiddenGrid.className = 'gallery';
+          hiddenPhotos.forEach(p => {
+            const img = document.createElement('img');
+            img.className = 'thumb';
+            img.src = p.src;
+            img.alt = 'Выполнено';
+            // на фото можно сделать аналогичные кнопки, но они скрыты под details
+            hiddenGrid.appendChild(img);
+          });
+          details.appendChild(hiddenGrid);
+          body.appendChild(details);
+        }
+
+        // кнопки добавления
+        const actions = document.createElement('div');
+        actions.className = 'card-actions';
+        const addBtn = document.createElement('button');
+        addBtn.className = 'btn';
+        addBtn.textContent = 'Добавить фото';
+        addBtn.addEventListener('click', () => {
+          // временно добавим скрытый input для загрузки
+          const input = createFileInput(folder.id);
+          // вставим рядом кнопку-обертку
+          const holder = document.createElement('div');
+          holder.style.display = 'inline-block';
+          holder.style.marginLeft = '4px';
+          holder.appendChild(input);
+          actions.replaceWith(holder);
+        });
+
+        const moveFolderSelector = document.createElement('select');
+        moveFolderSelector.className = 'select';
+        moveFolderSelector.innerHTML = `<option value="">Переместить в...</option>` + data.folders.filter(f => f.id !== folder.id).map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+        moveFolderSelector.addEventListener('change', (e) => {
+          const targetId = e.target.value;
+          if (targetId) {
+            // перенос первой фото (для примера) в целевую папку
+            if (folder.photos.length > 0) {
+              const photoId = folder.photos[0].id;
+              movePhoto(photoId, folder.id, targetId);
+              render();
+              save();
+            }
+            e.target.value = '';
+          }
+        });
+
+        actions.appendChild(addBtn);
+        actions.appendChild(moveFolderSelector);
+        header.appendChild(document.createElement('span')); // placeholder для ровного распределения
+        card.appendChild(header);
+        card.appendChild(gallery);
+        card.appendChild(actions);
+
+        grid.appendChild(card);
       });
     }
-    
-    // Модалка
-    modalClose.onclick = () => {
-      modal.classList.remove('active');
-      document.body.style.overflow = '';
-    };
-    modal.onclick = (e) => {
-      if (e.target === modal) {
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
-      }
-    };
-    
-    // Drag & drop
-    document.body.ondragover = (e) => { e.preventDefault(); };
-    document.body.ondrop = (e) => {
-      e.preventDefault();
-      const files = e.dataTransfer.files;
-      if (files && files.length) {
-        const card = e.target.closest('.card');
-        if (card) {
-          const seasonId = card.getAttribute('data-season');
-          if (seasonId) addPhotos(seasonId, files);
-        }
-      }
-    };
-    
-    loadData();
-  })();
-</script>
+
+    // Инициализация данных и рендер
+    load();
+    // если пусто - создадим примерную папку
+    if (data.folders.length === 0) {
+      data.folders = [
+        { id: uid(), name: 'Лето', created: Date.now(), photos: [] },
+        { id: uid(), name: 'Зима', created: Date.now(), photos: [] },
+        { id: uid(), name: 'Весна', created: Date.now(), photos: [] },
+        { id: uid(), name: 'Осень', created: Date.now(), photos: [] }
+      ];
+    }
+    render();
+
+    // автосохранение перед закрытием и по мере изменений
+    window.addEventListener('beforeunload', save);
+  </script>
 </body>
 </html>
