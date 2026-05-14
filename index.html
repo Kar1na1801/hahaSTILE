@@ -325,45 +325,60 @@
   let pendingRenameId = null;
   let pendingCopyPhoto = null;
 
-  const STORAGE_KEY = 'wardrobe_final_v3';
+  // ИСПРАВЛЕНО: единый ключ для localStorage
+  const STORAGE_KEY = 'wardrobe_app_data';
 
-  // ID
   function genId() {
     return Date.now() + '_' + Math.random().toString(36).substr(2, 8);
   }
 
-  // ЗАГРУЗКА
+  // ИСПРАВЛЕНО: проверка на пустое хранилище и правильная загрузка
   function load() {
     const saved = localStorage.getItem(STORAGE_KEY);
+    
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        folders = data.folders || [];
-        currentFolderId = data.currentFolderId;
+        // Проверяем, что данные имеют правильную структуру
+        if (data.folders && Array.isArray(data.folders) && data.folders.length > 0) {
+          folders = data.folders;
+          currentFolderId = data.currentFolderId;
+          
+          // Проверяем, что currentFolderId существует в папках
+          if (!folders.some(f => f.id === currentFolderId)) {
+            currentFolderId = folders[0]?.id || null;
+          }
+        } else {
+          // Если данные повреждены, создаем папки по умолчанию
+          createDefaultFolders();
+        }
       } catch(e) {
         console.error('Ошибка загрузки', e);
+        createDefaultFolders();
       }
+    } else {
+      // Первый запуск - создаем папки по умолчанию
+      createDefaultFolders();
     }
-    if (!folders.length) {
-      folders = [
-        { id: genId(), name: 'Лето', photos: [] },
-        { id: genId(), name: 'Осень', photos: [] },
-        { id: genId(), name: 'Зима', photos: [] },
-        { id: genId(), name: 'Весна', photos: [] }
-      ];
-      currentFolderId = folders[0].id;
-    }
-    if (!folders.some(f => f.id === currentFolderId)) {
-      currentFolderId = folders[0]?.id || null;
-    }
+    
     render();
     save();
+  }
+
+  // ИСПРАВЛЕНО: вынес создание папок в отдельную функцию
+  function createDefaultFolders() {
+    folders = [
+      { id: genId(), name: 'Лето', photos: [] },
+      { id: genId(), name: 'Осень', photos: [] },
+      { id: genId(), name: 'Зима', photos: [] },
+      { id: genId(), name: 'Весна', photos: [] }
+    ];
+    currentFolderId = folders[0].id;
   }
 
   function save() {
     const dataToSave = { folders, currentFolderId };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-    console.log('Сохранено:', dataToSave);
   }
 
   // ПАПКИ
@@ -462,7 +477,6 @@
     const toFolder = folders.find(f => f.id === toFolderId);
     if (!toFolder) return;
     
-    // Создаём копию фото с новым ID
     const copy = {
       id: genId(),
       src: photo.src,
@@ -676,7 +690,6 @@
     else list.classList.remove('open');
   };
   
-  // Модалка создания папки
   document.getElementById('cancelFolderBtn').onclick = () => {
     document.getElementById('folderModal').classList.remove('active');
   };
@@ -687,7 +700,6 @@
     document.getElementById('folderNameInput').value = '';
   };
   
-  // Модалка переименования
   document.getElementById('cancelRenameBtn').onclick = () => {
     document.getElementById('renameModal').classList.remove('active');
     pendingRenameId = null;
@@ -701,7 +713,6 @@
     pendingRenameId = null;
   };
   
-  // Модалка копирования
   document.getElementById('cancelCopyBtn').onclick = () => {
     document.getElementById('copyModal').classList.remove('active');
     pendingCopyPhoto = null;
