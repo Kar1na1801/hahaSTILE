@@ -245,6 +245,11 @@
       color: white;
       cursor: pointer;
     }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #8e8e93;
+    }
   </style>
 </head>
 <body>
@@ -318,71 +323,159 @@
 </div>
 
 <script>
-  // ДАННЫЕ
+  // IndexedDB для хранения фото
+  let db = null;
   let folders = [];
   let currentFolderId = null;
   let archiveOpen = false;
   let pendingRenameId = null;
   let pendingCopyPhoto = null;
 
-  // ИСПРАВЛЕНО: единый ключ для localStorage
-  const STORAGE_KEY = 'wardrobe_app_data';
-
   function genId() {
     return Date.now() + '_' + Math.random().toString(36).substr(2, 8);
   }
 
-  // ИСПРАВЛЕНО: проверка на пустое хранилище и правильная загрузка
-  function load() {
-    const saved = localStorage.getItem(STORAGE_KEY);
+  // Открываем базу данных
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('WardrobeDB', 2);
+      
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        db = request.result;
+        resolve();
+      };
+      
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        
+        // Хранилище для фото
+        if (!db.objectStoreNames.contains('photos')) {
+          const photoStore = db.createObjectStore('photos', { keyPath: 'id' });
+          photoStore.createIndex('folderId', 'folderId', { unique: false });
+        }
+        
+        // Хранилище для папок и настроек
+        if (!db.objectStoreNames.contains('metadata')) {
+          db.createObjectStore('metadata', { keyPath: 'key' });
+        }
+      };
+    });
+  }
+
+  // Сохраняем папки и текущую папку
+  async function saveMetadata() {
+    const tx = db.transaction(['metadata'], 'readwrite');
+    const store = tx.objectStore('metadata');
+    await store.put({ key: 'folders', value: folders });
+    await store.put({ key: 'currentFolderId', value: currentFolderId });
+    return new Promise((resolve) => { tx.oncomplete = resolve; });
+  }
+
+  // Загружаем папки и текущую папку
+  async function loadMetadata() {
+    const tx = db.transaction(['metadata'], 'readonly');
+    const store = tx.objectStore('metadata');
     
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        // Проверяем, что данные имеют правильную структуру
-        if (data.folders && Array.isArray(data.folders) && data.folders.length > 0) {
-          folders = data.folders;
-          currentFolderId = data.currentFolderId;
+    const foldersReq = store.get('folders');
+    const currentReq = store.get('currentFolderId');
+    
+    return new Promise((resolve) => {
+      foldersReq.onsuccess = () => {
+        if (foldersReq.result) {
+          folders = foldersReq.result.value;
+        } else {
+          // Папки по умолчанию
+          folders = [
+            { id: genId(), name: 'Лето', photos: [] },
+            { id: genId(), name: 'Осень', photos: [] },
+            { id: genId(), name: 'Зима', photos: [] },
+            { id: genId(), name: 'Весна', photos: [] }
+          ];
+        }
+        
+        currentReq.onsuccess = () => {
+          if (currentReq.result) {
+            currentFolderId = currentReq.result.value;
+          } else {
+            currentFolderId = folders[0]?.id || null;
+          }
           
-          // Проверяем, что currentFolderId существует в папках
+          // Проверяем, что currentFolderId существует
           if (!folders.some(f => f.id === currentFolderId)) {
             currentFolderId = folders[0]?.id || null;
           }
-        } else {
-          // Если данные повреждены, создаем папки по умолчанию
-          createDefaultFolders();
-        }
-      } catch(e) {
-        console.error('Ошибка загрузки', e);
-        createDefaultFolders();
-      }
-    } else {
-      // Первый запуск - создаем папки по умолчанию
-      createDefaultFolders();
-    }
+          resolve();
+        };
+      };
+    });
+  }
+
+  // Загружаем фото для папки
+  async function loadPhotosForFolder(folderId) {
+    const tx = db.transaction(['photos'], 'readonly');
+    const store = tx.objectStore('photos');
+    const index = store.index('folderId');
+    const photos = [];
     
-    render();
-    save();
+    return new Promise((resolve) => {
+      const request = index.openCursor(IDBKeyRange.only(folderId));
+      request.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor) {
+          photos.push(cursor.value);
+          cursor.continue();
+        } else {
+          // Сортируем фото
+          photos.sort((a, b) => {
+            if (a.archived !== b.archived) return a.archived ? 1 : -1;
+            if (a.important !== b.important) return a.important ? -1 : 1;
+            return b.date - a.date;
+          });
+          resolve(photos);
+        }
+      };
+    });
   }
 
-  // ИСПРАВЛЕНО: вынес создание папок в отдельную функцию
-  function createDefaultFolders() {
-    folders = [
-      { id: genId(), name: 'Лето', photos: [] },
-      { id: genId(), name: 'Осень', photos: [] },
-      { id: genId(), name: 'Зима', photos: [] },
-      { id: genId(), name: 'Весна', photos: [] }
-    ];
-    currentFolderId = folders[0].id;
+  // Сохраняем фото
+  async function savePhoto(photo) {
+    const tx = db.transaction(['photos'], 'readwrite');
+    const store = tx.objectStore('photos');
+    store.put(photo);
+    return new Promise((resolve) => { tx.oncomplete = resolve; });
   }
 
-  function save() {
-    const dataToSave = { folders, currentFolderId };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+  // Удаляем фото
+  async function deletePhotoFromDB(photoId) {
+    const tx = db.transaction(['photos'], 'readwrite');
+    const store = tx.objectStore('photos');
+    store.delete(photoId);
+    return new Promise((resolve) => { tx.oncomplete = resolve; });
   }
 
-  // ПАПКИ
-  function addFolder(name) {
+  // Загружаем всё и рендерим
+  async function loadAndRender() {
+    await loadMetadata();
+    await renderAll();
+  }
+
+  // Обновляем photos массивы в папках (для быстрого доступа)
+  async function refreshFolderPhotos() {
+    for (let folder of folders) {
+      folder.photos = await loadPhotosForFolder(folder.id);
+    }
+  }
+
+  async function renderAll() {
+    await refreshFolderPhotos();
+    renderFolders();
+    renderPhotos();
+    renderArchive();
+    updateStats();
+  }
+
+  async function addFolder(name) {
     if (!name.trim()) return;
     if (folders.some(f => f.name.toLowerCase() === name.trim().toLowerCase())) {
       alert('Такая папка уже есть');
@@ -391,107 +484,109 @@
     const newFolder = { id: genId(), name: name.trim(), photos: [] };
     folders.push(newFolder);
     currentFolderId = newFolder.id;
-    render();
-    save();
+    await saveMetadata();
+    await renderAll();
   }
 
-  function renameFolder(id, newName) {
+  async function renameFolder(id, newName) {
     const f = folders.find(f => f.id === id);
     if (f && newName.trim()) {
       f.name = newName.trim();
-      render();
-      save();
+      await saveMetadata();
+      await renderAll();
     }
   }
 
-  function deleteFolder(id) {
+  async function deleteFolder(id) {
     if (folders.length === 1) {
       alert('Нельзя удалить последнюю папку');
       return;
     }
     if (confirm('Удалить папку и все фото?')) {
+      // Удаляем все фото папки из БД
+      const folder = folders.find(f => f.id === id);
+      if (folder) {
+        for (let photo of folder.photos) {
+          await deletePhotoFromDB(photo.id);
+        }
+      }
+      
       folders = folders.filter(f => f.id !== id);
       if (currentFolderId === id) currentFolderId = folders[0].id;
-      render();
-      save();
+      await saveMetadata();
+      await renderAll();
     }
   }
 
-  // ФОТО
-  function addPhoto(dataUrl) {
+  async function addPhoto(dataUrl) {
     const folder = folders.find(f => f.id === currentFolderId);
     if (!folder) return;
-    folder.photos.push({
+    
+    const photo = {
       id: genId(),
+      folderId: currentFolderId,
       src: dataUrl,
       important: false,
       archived: false,
       date: Date.now()
-    });
-    sortPhotos(folder);
-    render();
-    save();
-  }
-
-  function sortPhotos(folder) {
-    folder.photos.sort((a, b) => {
-      if (a.archived !== b.archived) return a.archived ? 1 : -1;
-      if (a.important !== b.important) return a.important ? -1 : 1;
-      return b.date - a.date;
-    });
-  }
-
-  function toggleImportant(photoId) {
-    const folder = folders.find(f => f.id === currentFolderId);
-    const photo = folder?.photos.find(p => p.id === photoId);
-    if (photo) {
-      photo.important = !photo.important;
-      sortPhotos(folder);
-      render();
-      save();
-    }
-  }
-
-  function toggleArchive(photoId) {
-    const folder = folders.find(f => f.id === currentFolderId);
-    const photo = folder?.photos.find(p => p.id === photoId);
-    if (photo) {
-      photo.archived = !photo.archived;
-      sortPhotos(folder);
-      render();
-      save();
-    }
-  }
-
-  function deletePhoto(photoId) {
-    if (!confirm('Удалить фото?')) return;
-    const folder = folders.find(f => f.id === currentFolderId);
-    if (folder) {
-      folder.photos = folder.photos.filter(p => p.id !== photoId);
-      render();
-      save();
-    }
-  }
-
-  function copyPhotoToFolder(photo, fromFolderId, toFolderId) {
-    const toFolder = folders.find(f => f.id === toFolderId);
-    if (!toFolder) return;
+    };
     
+    await savePhoto(photo);
+    await renderAll();
+  }
+
+  async function toggleImportant(photoId) {
+    const tx = db.transaction(['photos'], 'readwrite');
+    const store = tx.objectStore('photos');
+    const getReq = store.get(photoId);
+    
+    getReq.onsuccess = async () => {
+      const photo = getReq.result;
+      if (photo) {
+        photo.important = !photo.important;
+        store.put(photo);
+        tx.oncomplete = () => renderAll();
+      }
+    };
+  }
+
+  async function toggleArchive(photoId) {
+    const tx = db.transaction(['photos'], 'readwrite');
+    const store = tx.objectStore('photos');
+    const getReq = store.get(photoId);
+    
+    getReq.onsuccess = async () => {
+      const photo = getReq.result;
+      if (photo) {
+        photo.archived = !photo.archived;
+        store.put(photo);
+        tx.oncomplete = () => renderAll();
+      }
+    };
+  }
+
+  async function deletePhoto(photoId) {
+    if (!confirm('Удалить фото?')) return;
+    await deletePhotoFromDB(photoId);
+    await renderAll();
+  }
+
+  async function copyPhotoToFolder(photo, fromFolderId, toFolderId) {
     const copy = {
       id: genId(),
+      folderId: toFolderId,
       src: photo.src,
       important: photo.important,
       archived: false,
       date: Date.now()
     };
-    toFolder.photos.push(copy);
-    sortPhotos(toFolder);
-    render();
-    save();
+    
+    await savePhoto(copy);
+    await renderAll();
+    const toFolder = folders.find(f => f.id === toFolderId);
     alert(`Фото скопировано в папку "${toFolder.name}"`);
   }
 
-  // ВЫБОР ФОТО
   function pickPhotos() {
     const input = document.createElement('input');
     input.type = 'file';
@@ -508,13 +603,11 @@
     input.click();
   }
 
-  // ПРОСМОТР
   function openViewer(src) {
     document.getElementById('viewerImg').src = src;
     document.getElementById('viewer').classList.add('active');
   }
 
-  // СТАТИСТИКА
   function updateStats() {
     const folder = folders.find(f => f.id === currentFolderId);
     if (!folder) return;
@@ -526,14 +619,6 @@
     document.getElementById('statTotal').textContent = total;
     document.getElementById('statImportant').textContent = important;
     document.getElementById('statArchived').textContent = archived;
-  }
-
-  // ОТРИСОВКА
-  function render() {
-    renderFolders();
-    renderPhotos();
-    renderArchive();
-    updateStats();
   }
 
   function renderFolders() {
@@ -556,8 +641,7 @@
           document.getElementById('renameModal').classList.add('active');
         } else {
           currentFolderId = folder.id;
-          render();
-          save();
+          saveMetadata().then(() => renderAll());
         }
       };
       
@@ -671,62 +755,70 @@
     });
   }
 
-  // СОБЫТИЯ
-  document.getElementById('addPhotoBtn').onclick = () => pickPhotos();
-  document.getElementById('closeViewerBtn').onclick = () => {
-    document.getElementById('viewer').classList.remove('active');
-  };
-  document.getElementById('viewer').onclick = (e) => {
-    if (e.target === document.getElementById('viewer')) {
+  // Запуск приложения
+  async function init() {
+    document.getElementById('photosContainer').innerHTML = '<div class="loading">Загрузка...</div>';
+    
+    await openDB();
+    await loadAndRender();
+    
+    // Навешиваем события
+    document.getElementById('addPhotoBtn').onclick = () => pickPhotos();
+    document.getElementById('closeViewerBtn').onclick = () => {
       document.getElementById('viewer').classList.remove('active');
-    }
-  };
-  document.getElementById('archiveHeader').onclick = () => {
-    archiveOpen = !archiveOpen;
-    const arrow = document.getElementById('archiveArrow');
-    const list = document.getElementById('archiveList');
-    arrow.textContent = archiveOpen ? '▼' : '▶';
-    if (archiveOpen) list.classList.add('open');
-    else list.classList.remove('open');
-  };
+    };
+    document.getElementById('viewer').onclick = (e) => {
+      if (e.target === document.getElementById('viewer')) {
+        document.getElementById('viewer').classList.remove('active');
+      }
+    };
+    document.getElementById('archiveHeader').onclick = () => {
+      archiveOpen = !archiveOpen;
+      const arrow = document.getElementById('archiveArrow');
+      const list = document.getElementById('archiveList');
+      arrow.textContent = archiveOpen ? '▼' : '▶';
+      if (archiveOpen) list.classList.add('open');
+      else list.classList.remove('open');
+    };
+    
+    document.getElementById('cancelFolderBtn').onclick = () => {
+      document.getElementById('folderModal').classList.remove('active');
+    };
+    document.getElementById('createFolderBtn').onclick = () => {
+      const name = document.getElementById('folderNameInput').value.trim();
+      if (name) addFolder(name);
+      document.getElementById('folderModal').classList.remove('active');
+      document.getElementById('folderNameInput').value = '';
+    };
+    
+    document.getElementById('cancelRenameBtn').onclick = () => {
+      document.getElementById('renameModal').classList.remove('active');
+      pendingRenameId = null;
+    };
+    document.getElementById('confirmRenameBtn').onclick = () => {
+      const newName = document.getElementById('renameFolderInput').value.trim();
+      if (newName && pendingRenameId) {
+        renameFolder(pendingRenameId, newName);
+      }
+      document.getElementById('renameModal').classList.remove('active');
+      pendingRenameId = null;
+    };
+    
+    document.getElementById('cancelCopyBtn').onclick = () => {
+      document.getElementById('copyModal').classList.remove('active');
+      pendingCopyPhoto = null;
+    };
+    document.getElementById('confirmCopyBtn').onclick = () => {
+      const targetFolderId = document.getElementById('copyFolderSelect').value;
+      if (targetFolderId && pendingCopyPhoto) {
+        copyPhotoToFolder(pendingCopyPhoto, currentFolderId, targetFolderId);
+      }
+      document.getElementById('copyModal').classList.remove('active');
+      pendingCopyPhoto = null;
+    };
+  }
   
-  document.getElementById('cancelFolderBtn').onclick = () => {
-    document.getElementById('folderModal').classList.remove('active');
-  };
-  document.getElementById('createFolderBtn').onclick = () => {
-    const name = document.getElementById('folderNameInput').value.trim();
-    if (name) addFolder(name);
-    document.getElementById('folderModal').classList.remove('active');
-    document.getElementById('folderNameInput').value = '';
-  };
-  
-  document.getElementById('cancelRenameBtn').onclick = () => {
-    document.getElementById('renameModal').classList.remove('active');
-    pendingRenameId = null;
-  };
-  document.getElementById('confirmRenameBtn').onclick = () => {
-    const newName = document.getElementById('renameFolderInput').value.trim();
-    if (newName && pendingRenameId) {
-      renameFolder(pendingRenameId, newName);
-    }
-    document.getElementById('renameModal').classList.remove('active');
-    pendingRenameId = null;
-  };
-  
-  document.getElementById('cancelCopyBtn').onclick = () => {
-    document.getElementById('copyModal').classList.remove('active');
-    pendingCopyPhoto = null;
-  };
-  document.getElementById('confirmCopyBtn').onclick = () => {
-    const targetFolderId = document.getElementById('copyFolderSelect').value;
-    if (targetFolderId && pendingCopyPhoto) {
-      copyPhotoToFolder(pendingCopyPhoto, currentFolderId, targetFolderId);
-    }
-    document.getElementById('copyModal').classList.remove('active');
-    pendingCopyPhoto = null;
-  };
-
-  load();
+  init();
 </script>
 </body>
 </html>
