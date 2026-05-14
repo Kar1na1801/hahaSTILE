@@ -245,6 +245,21 @@
       color: white;
       cursor: pointer;
     }
+    .export-btn {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: #2c2c2e;
+      width: 56px;
+      height: 56px;
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
   </style>
 </head>
 <body>
@@ -278,6 +293,7 @@
 <div id="archiveList" class="archive-list"></div>
 
 <div class="fab" id="addPhotoBtn">+</div>
+<div class="export-btn" id="exportBtn">💾</div>
 
 <div id="folderModal" class="modal">
   <div class="modal-content">
@@ -325,45 +341,103 @@
   let pendingRenameId = null;
   let pendingCopyPhoto = null;
 
-  const STORAGE_KEY = 'wardrobe_final_v3';
+  const STORAGE_KEY = 'wardrobe_final_v4';
 
   // ID
   function genId() {
     return Date.now() + '_' + Math.random().toString(36).substr(2, 8);
   }
 
+  // ПРОВЕРКА И СОХРАНЕНИЕ
+  function saveToLocalStorage() {
+    const dataToSave = {
+      folders: folders,
+      currentFolderId: currentFolderId,
+      lastUpdated: Date.now()
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    console.log('💾 СОХРАНЕНО:', dataToSave);
+    // Показываем подтверждение
+    const exportBtn = document.getElementById('exportBtn');
+    exportBtn.style.background = '#3a7a3a';
+    setTimeout(() => {
+      exportBtn.style.background = '#2c2c2e';
+    }, 500);
+  }
+
   // ЗАГРУЗКА
-  function load() {
+  function loadFromLocalStorage() {
     const saved = localStorage.getItem(STORAGE_KEY);
+    console.log('📂 Загружено из localStorage:', saved);
+    
     if (saved) {
       try {
         const data = JSON.parse(saved);
-        folders = data.folders || [];
-        currentFolderId = data.currentFolderId;
+        if (data.folders && Array.isArray(data.folders) && data.folders.length > 0) {
+          folders = data.folders;
+          currentFolderId = data.currentFolderId;
+          console.log('✅ Данные загружены, папок:', folders.length);
+        } else {
+          createDefaultFolders();
+        }
       } catch(e) {
-        console.error('Ошибка загрузки', e);
+        console.error('Ошибка парсинга:', e);
+        createDefaultFolders();
       }
+    } else {
+      console.log('📭 Нет сохранённых данных, создаём стандартные');
+      createDefaultFolders();
     }
-    if (!folders.length) {
-      folders = [
-        { id: genId(), name: 'Лето', photos: [] },
-        { id: genId(), name: 'Осень', photos: [] },
-        { id: genId(), name: 'Зима', photos: [] },
-        { id: genId(), name: 'Весна', photos: [] }
-      ];
-      currentFolderId = folders[0].id;
-    }
-    if (!folders.some(f => f.id === currentFolderId)) {
+    
+    if (!currentFolderId || !folders.some(f => f.id === currentFolderId)) {
       currentFolderId = folders[0]?.id || null;
     }
+    
     render();
-    save();
   }
 
-  function save() {
-    const dataToSave = { folders, currentFolderId };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-    console.log('Сохранено:', dataToSave);
+  function createDefaultFolders() {
+    folders = [
+      { id: genId(), name: '☀️ Лето', photos: [] },
+      { id: genId(), name: '🍂 Осень', photos: [] },
+      { id: genId(), name: '❄️ Зима', photos: [] },
+      { id: genId(), name: '🌸 Весна', photos: [] }
+    ];
+    currentFolderId = folders[0].id;
+  }
+
+  // ЭКСПОРТ
+  function exportData() {
+    const dataStr = JSON.stringify({ folders, currentFolderId }, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `garderob_backup_${new Date().toISOString().slice(0,19)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ИМПОРТ
+  function importData(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.folders && Array.isArray(data.folders)) {
+          folders = data.folders;
+          currentFolderId = data.currentFolderId || folders[0]?.id;
+          saveToLocalStorage();
+          render();
+          alert('Импорт успешен!');
+        } else {
+          alert('Неверный формат файла');
+        }
+      } catch(err) {
+        alert('Ошибка при импорте');
+      }
+    };
+    reader.readAsText(file);
   }
 
   // ПАПКИ
@@ -377,7 +451,7 @@
     folders.push(newFolder);
     currentFolderId = newFolder.id;
     render();
-    save();
+    saveToLocalStorage();
   }
 
   function renameFolder(id, newName) {
@@ -385,7 +459,7 @@
     if (f && newName.trim()) {
       f.name = newName.trim();
       render();
-      save();
+      saveToLocalStorage();
     }
   }
 
@@ -398,7 +472,7 @@
       folders = folders.filter(f => f.id !== id);
       if (currentFolderId === id) currentFolderId = folders[0].id;
       render();
-      save();
+      saveToLocalStorage();
     }
   }
 
@@ -415,7 +489,7 @@
     });
     sortPhotos(folder);
     render();
-    save();
+    saveToLocalStorage();
   }
 
   function sortPhotos(folder) {
@@ -433,7 +507,7 @@
       photo.important = !photo.important;
       sortPhotos(folder);
       render();
-      save();
+      saveToLocalStorage();
     }
   }
 
@@ -444,7 +518,7 @@
       photo.archived = !photo.archived;
       sortPhotos(folder);
       render();
-      save();
+      saveToLocalStorage();
     }
   }
 
@@ -454,7 +528,7 @@
     if (folder) {
       folder.photos = folder.photos.filter(p => p.id !== photoId);
       render();
-      save();
+      saveToLocalStorage();
     }
   }
 
@@ -462,7 +536,6 @@
     const toFolder = folders.find(f => f.id === toFolderId);
     if (!toFolder) return;
     
-    // Создаём копию фото с новым ID
     const copy = {
       id: genId(),
       src: photo.src,
@@ -473,7 +546,7 @@
     toFolder.photos.push(copy);
     sortPhotos(toFolder);
     render();
-    save();
+    saveToLocalStorage();
     alert(`Фото скопировано в папку "${toFolder.name}"`);
   }
 
@@ -543,7 +616,7 @@
         } else {
           currentFolderId = folder.id;
           render();
-          save();
+          saveToLocalStorage();
         }
       };
       
@@ -659,6 +732,8 @@
 
   // СОБЫТИЯ
   document.getElementById('addPhotoBtn').onclick = () => pickPhotos();
+  document.getElementById('exportBtn').onclick = () => exportData();
+  
   document.getElementById('closeViewerBtn').onclick = () => {
     document.getElementById('viewer').classList.remove('active');
   };
@@ -676,7 +751,6 @@
     else list.classList.remove('open');
   };
   
-  // Модалка создания папки
   document.getElementById('cancelFolderBtn').onclick = () => {
     document.getElementById('folderModal').classList.remove('active');
   };
@@ -687,7 +761,6 @@
     document.getElementById('folderNameInput').value = '';
   };
   
-  // Модалка переименования
   document.getElementById('cancelRenameBtn').onclick = () => {
     document.getElementById('renameModal').classList.remove('active');
     pendingRenameId = null;
@@ -701,7 +774,6 @@
     pendingRenameId = null;
   };
   
-  // Модалка копирования
   document.getElementById('cancelCopyBtn').onclick = () => {
     document.getElementById('copyModal').classList.remove('active');
     pendingCopyPhoto = null;
@@ -715,7 +787,8 @@
     pendingCopyPhoto = null;
   };
 
-  load();
+  // ЗАПУСК
+  loadFromLocalStorage();
 </script>
 </body>
 </html>
