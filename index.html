@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-  <title>Галерея — важность и архив</title>
+  <title>Мои образы</title>
   <style>
     * {
       margin: 0;
@@ -11,12 +11,15 @@
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
     }
+
     body {
       background: #000000;
-      font-family: -apple-system, BlinkMacSystemFont, system-ui;
-      color: white;
-      padding-bottom: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui;
+      color: #ffffff;
+      padding-bottom: 80px;
     }
+
+    /* Header */
     .header {
       padding: 20px 16px 8px;
       background: #000000;
@@ -27,15 +30,18 @@
     .header h1 {
       font-size: 34px;
       font-weight: 700;
-      background: linear-gradient(135deg, #fff, #8e8e93);
+      background: linear-gradient(135deg, #ffffff, #8e8e93);
       background-clip: text;
       -webkit-background-clip: text;
       color: transparent;
     }
+
+    /* Горизонтальные папки */
     .folders-scroll {
       overflow-x: auto;
       padding: 12px 16px;
       white-space: nowrap;
+      scrollbar-width: thin;
     }
     .folders-row {
       display: inline-flex;
@@ -47,6 +53,7 @@
       align-items: center;
       gap: 6px;
       cursor: pointer;
+      transition: 0.1s;
     }
     .folder-icon {
       width: 70px;
@@ -67,6 +74,12 @@
       font-size: 11px;
       color: #8e8e93;
       font-weight: 500;
+      max-width: 70px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .folder-item.active .folder-name {
+      color: #ffffff;
     }
     .add-folder {
       background: #1c1c1e;
@@ -76,13 +89,16 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
+      font-size: 32px;
+      font-weight: 300;
     }
+
+    /* Сетка фото 3 колонки */
     .photos-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 2px;
-      background: #000;
+      background: #000000;
     }
     .photo-card {
       position: relative;
@@ -93,35 +109,32 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      display: block;
     }
-    .photo-badges {
+    .photo-badge {
       position: absolute;
       top: 6px;
       left: 6px;
-      display: flex;
-      gap: 4px;
-    }
-    .badge-star {
       background: rgba(0,0,0,0.6);
       backdrop-filter: blur(8px);
-      padding: 2px 6px;
+      padding: 2px 8px;
       border-radius: 20px;
-      font-size: 11px;
+      font-size: 10px;
       color: #ffd966;
     }
-    .photo-menu {
+    .photo-actions {
       position: absolute;
       bottom: 6px;
       right: 6px;
       display: flex;
       gap: 6px;
     }
-    .photo-menu button {
+    .photo-actions button {
       background: rgba(0,0,0,0.6);
       backdrop-filter: blur(8px);
       border: none;
       border-radius: 20px;
-      padding: 4px 8px;
+      padding: 5px 10px;
       font-size: 12px;
       color: white;
       cursor: pointer;
@@ -132,10 +145,12 @@
       padding: 60px 20px;
       color: #6c6c70;
     }
+
+    /* Архив */
     .archive-section {
-      margin-top: 20px;
+      margin-top: 24px;
       border-top: 1px solid #2c2c2e;
-      padding: 12px 16px;
+      padding: 16px 16px 0;
     }
     .archive-header {
       display: flex;
@@ -156,10 +171,39 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 2px;
       margin-top: 12px;
+      margin-bottom: 16px;
     }
     .archive-grid.open {
       display: grid;
     }
+    .archive-photo {
+      position: relative;
+      aspect-ratio: 1;
+      opacity: 0.7;
+    }
+    .archive-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .archive-actions {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      display: flex;
+      gap: 6px;
+    }
+    .archive-actions button {
+      background: rgba(0,0,0,0.6);
+      border: none;
+      border-radius: 20px;
+      padding: 4px 8px;
+      font-size: 10px;
+      color: white;
+      cursor: pointer;
+    }
+
+    /* Кнопка добавления */
     .fab {
       position: fixed;
       bottom: 20px;
@@ -171,18 +215,25 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 28px;
+      font-size: 32px;
+      font-weight: 300;
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       z-index: 20;
+      transition: 0.1s;
     }
+    .fab:active {
+      transform: scale(0.94);
+    }
+
+    /* Просмотр фото */
     .viewer {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: #000;
+      background: #000000;
       z-index: 100;
       display: none;
       flex-direction: column;
@@ -206,6 +257,8 @@
       font-size: 28px;
       color: white;
       cursor: pointer;
+      width: 44px;
+      height: 44px;
     }
     .viewer-img {
       flex: 1;
@@ -218,6 +271,8 @@
       max-height: 100%;
       object-fit: contain;
     }
+
+    /* Диалоги */
     .dialog {
       position: fixed;
       top: 0;
@@ -238,6 +293,9 @@
       border-radius: 24px;
       padding: 20px;
       width: 280px;
+    }
+    .dialog-card h3 {
+      margin-bottom: 8px;
     }
     .dialog-card input {
       width: 100%;
@@ -268,7 +326,7 @@
 <body>
 
 <div class="header">
-  <h1>Галерея</h1>
+  <h1>Мои образы</h1>
 </div>
 
 <div class="folders-scroll">
@@ -280,7 +338,7 @@
 <div class="archive-section" id="archiveSection">
   <div class="archive-header" id="archiveHeader">
     <span class="archive-arrow">▶</span>
-    <span>📦 Выполненные / Архив</span>
+    <span>📦 Выполненные</span>
     <span id="archiveCount" style="font-size:12px; color:#8e8e93;"></span>
   </div>
   <div class="archive-grid" id="archiveGrid"></div>
@@ -300,7 +358,7 @@
 <div id="folderDialog" class="dialog">
   <div class="dialog-card">
     <h3>Новая папка</h3>
-    <input type="text" id="newFolderName" placeholder="Название">
+    <input type="text" id="newFolderName" placeholder="Название" autocomplete="off">
     <div class="dialog-buttons">
       <button class="dialog-btn" id="cancelFolderBtn">Отмена</button>
       <button class="dialog-btn" id="confirmFolderBtn" style="background:#3a7a3a;">Создать</button>
@@ -309,15 +367,26 @@
 </div>
 
 <script>
+  // ========== ДАННЫЕ ==========
   let folders = [];
   let currentFolderId = null;
-  let archiveOpen = false;
-  const STORAGE_KEY = 'gallery_important_archive';
+  let archiveExpanded = false;
 
+  const STORAGE_KEY = 'wardrobe_pro_final';
+
+  // ========== ВСПОМОГАТЕЛЬНЫЕ ==========
   function uid() {
-    return Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+    return Date.now() + '_' + Math.random().toString(36).substring(2, 10);
   }
 
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      folders: folders,
+      currentFolderId: currentFolderId
+    }));
+  }
+
+  // ========== ЗАГРУЗКА ==========
   function load() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -327,6 +396,7 @@
         currentFolderId = data.currentFolderId;
       } catch(e) {}
     }
+    
     if (!folders.length) {
       folders = [
         { id: uid(), name: 'Лето', photos: [] },
@@ -336,48 +406,54 @@
       ];
       currentFolderId = folders[0].id;
     }
-    renderAll();
+    
+    if (!folders.some(f => f.id === currentFolderId)) {
+      currentFolderId = folders[0]?.id || null;
+    }
+    
+    render();
     save();
   }
 
-  function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ folders, currentFolderId }));
-  }
-
+  // ========== ПАПКИ ==========
   function createFolder(name) {
-    if (!name.trim()) return;
-    if (folders.some(f => f.name === name.trim())) {
-      alert('Такая папка уже есть');
+    if (!name || !name.trim()) return;
+    if (folders.some(f => f.name.toLowerCase() === name.trim().toLowerCase())) {
+      alert('Папка с таким названием уже есть');
       return;
     }
-    folders.push({ id: uid(), name: name.trim(), photos: [] });
-    currentFolderId = folders[folders.length - 1].id;
-    renderAll();
+    const newFolder = { id: uid(), name: name.trim(), photos: [] };
+    folders.push(newFolder);
+    currentFolderId = newFolder.id;
+    render();
     save();
   }
 
-  function renameFolder(id, newName) {
-    const f = folders.find(f => f.id === id);
-    if (f && newName.trim()) {
-      f.name = newName.trim();
-      renderAll();
+  function renameFolder(folderId, newName) {
+    const folder = folders.find(f => f.id === folderId);
+    if (folder && newName && newName.trim()) {
+      folder.name = newName.trim();
+      render();
       save();
     }
   }
 
-  function deleteFolder(id) {
+  function deleteFolder(folderId) {
     if (folders.length === 1) {
       alert('Нельзя удалить последнюю папку');
       return;
     }
     if (confirm('Удалить папку и все фото?')) {
-      folders = folders.filter(f => f.id !== id);
-      if (currentFolderId === id) currentFolderId = folders[0].id;
-      renderAll();
+      folders = folders.filter(f => f.id !== folderId);
+      if (currentFolderId === folderId) {
+        currentFolderId = folders[0]?.id || null;
+      }
+      render();
       save();
     }
   }
 
+  // ========== ФОТО ==========
   function addPhoto(dataUrl) {
     const folder = folders.find(f => f.id === currentFolderId);
     if (!folder) return;
@@ -388,7 +464,7 @@
       important: false,
       archived: false
     });
-    renderAll();
+    render();
     save();
   }
 
@@ -397,7 +473,7 @@
     const photo = folder?.photos.find(p => p.id === photoId);
     if (photo) {
       photo.important = !photo.important;
-      renderAll();
+      render();
       save();
     }
   }
@@ -407,7 +483,7 @@
     const photo = folder?.photos.find(p => p.id === photoId);
     if (photo) {
       photo.archived = !photo.archived;
-      renderAll();
+      render();
       save();
     }
   }
@@ -417,36 +493,82 @@
     const folder = folders.find(f => f.id === currentFolderId);
     if (folder) {
       folder.photos = folder.photos.filter(p => p.id !== photoId);
-      renderAll();
+      render();
       save();
     }
+  }
+
+  // ========== ВЫБОР ФОТО ИЗ ГАЛЕРЕИ ==========
+  function selectPhotos() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = (e) => {
+      const files = Array.from(e.target.files);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (ev) => addPhoto(ev.target.result);
+        reader.readAsDataURL(file);
+      });
+    };
+    input.click();
+  }
+
+  // ========== ПРОСМОТР ФОТО ==========
+  function openViewer(src) {
+    const viewer = document.getElementById('viewer');
+    const viewerImg = document.getElementById('viewerImg');
+    viewerImg.src = src;
+    viewer.classList.add('active');
+  }
+
+  function closeViewer() {
+    document.getElementById('viewer').classList.remove('active');
+  }
+
+  // ========== ОТРИСОВКА ==========
+  function render() {
+    renderFolders();
+    renderPhotos();
+    renderArchive();
   }
 
   function renderFolders() {
     const container = document.getElementById('foldersRow');
     container.innerHTML = '';
+    
     folders.forEach(folder => {
-      const div = document.createElement('div');
-      div.className = `folder-item ${currentFolderId === folder.id ? 'active' : ''}`;
-      div.onclick = () => {
+      const folderDiv = document.createElement('div');
+      folderDiv.className = `folder-item ${currentFolderId === folder.id ? 'active' : ''}`;
+      folderDiv.onclick = () => {
         currentFolderId = folder.id;
-        renderAll();
+        render();
         save();
       };
-      div.ondblclick = () => {
-        const newName = prompt('Новое название:', folder.name);
+      
+      // Долгое нажатие / правый клик для переименования
+      folderDiv.oncontextmenu = (e) => {
+        e.preventDefault();
+        const newName = prompt('Новое название папки:', folder.name);
         if (newName) renameFolder(folder.id, newName);
+        return false;
       };
-      div.innerHTML = `
+      
+      folderDiv.innerHTML = `
         <div class="folder-icon">📁</div>
         <div class="folder-name">${escapeHtml(folder.name)}</div>
       `;
-      container.appendChild(div);
+      container.appendChild(folderDiv);
     });
+    
     const addDiv = document.createElement('div');
     addDiv.className = 'folder-item';
     addDiv.innerHTML = `<div class="add-folder">+</div><div class="folder-name">Новая</div>`;
-    addDiv.onclick = () => document.getElementById('folderDialog').classList.add('active');
+    addDiv.onclick = () => {
+      document.getElementById('folderDialog').classList.add('active');
+      document.getElementById('newFolderName').value = '';
+    };
     container.appendChild(addDiv);
   }
 
@@ -454,108 +576,98 @@
     const container = document.getElementById('photosGrid');
     const folder = folders.find(f => f.id === currentFolderId);
     const activePhotos = folder?.photos.filter(p => !p.archived) || [];
-    const archivedPhotos = folder?.photos.filter(p => p.archived) || [];
-
+    
     if (activePhotos.length === 0) {
       container.innerHTML = '<div class="empty-state">📸 Нет фото<br>Нажмите на кружок +</div>';
-    } else {
-      container.innerHTML = '';
-      activePhotos.forEach(photo => {
-        const card = document.createElement('div');
-        card.className = 'photo-card';
-        card.innerHTML = `
-          <img src="${photo.src}" loading="lazy">
-          <div class="photo-badges">
-            ${photo.important ? '<span class="badge-star">⭐ Важно</span>' : ''}
-          </div>
-          <div class="photo-menu">
-            <button class="star-btn" data-id="${photo.id}">⭐</button>
-            <button class="archive-btn" data-id="${photo.id}">📦</button>
-            <button class="delete-btn" data-id="${photo.id}">🗑</button>
-          </div>
-        `;
-        card.querySelector('img').onclick = () => openViewer(photo.src);
-        card.querySelector('.star-btn').onclick = (e) => { e.stopPropagation(); toggleImportant(photo.id); };
-        card.querySelector('.archive-btn').onclick = (e) => { e.stopPropagation(); toggleArchive(photo.id); };
-        card.querySelector('.delete-btn').onclick = (e) => { e.stopPropagation(); deletePhoto(photo.id); };
-        container.appendChild(card);
-      });
+      return;
     }
-
-    // Архив
-    const archiveGrid = document.getElementById('archiveGrid');
-    const archiveCountSpan = document.getElementById('archiveCount');
-    archiveCountSpan.textContent = `(${archivedPhotos.length})`;
-    if (archivedPhotos.length === 0) {
-      archiveGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:#6c6c70;">Нет выполненных</div>';
-    } else {
-      archiveGrid.innerHTML = '';
-      archivedPhotos.forEach(photo => {
-        const card = document.createElement('div');
-        card.className = 'photo-card';
-        card.style.opacity = '0.6';
-        card.innerHTML = `
-          <img src="${photo.src}" loading="lazy">
-          <div class="photo-menu">
-            <button class="restore-btn" data-id="${photo.id}">↩️ Вернуть</button>
-            <button class="delete-btn" data-id="${photo.id}">🗑</button>
-          </div>
-        `;
-        card.querySelector('img').onclick = () => openViewer(photo.src);
-        card.querySelector('.restore-btn').onclick = (e) => { e.stopPropagation(); toggleArchive(photo.id); };
-        card.querySelector('.delete-btn').onclick = (e) { e.stopPropagation(); deletePhoto(photo.id); };
-        archiveGrid.appendChild(card);
-      });
-    }
+    
+    container.innerHTML = '';
+    activePhotos.forEach(photo => {
+      const card = document.createElement('div');
+      card.className = 'photo-card';
+      card.innerHTML = `
+        <img src="${photo.src}" loading="lazy">
+        ${photo.important ? '<div class="photo-badge">⭐ Важно</div>' : ''}
+        <div class="photo-actions">
+          <button class="btn-star" data-id="${photo.id}">⭐</button>
+          <button class="btn-archive" data-id="${photo.id}">📦</button>
+          <button class="btn-delete" data-id="${photo.id}">🗑</button>
+        </div>
+      `;
+      
+      card.querySelector('img').onclick = () => openViewer(photo.src);
+      card.querySelector('.btn-star').onclick = (e) => { e.stopPropagation(); toggleImportant(photo.id); };
+      card.querySelector('.btn-archive').onclick = (e) { e.stopPropagation(); toggleArchive(photo.id); };
+      card.querySelector('.btn-delete').onclick = (e) => { e.stopPropagation(); deletePhoto(photo.id); };
+      
+      container.appendChild(card);
+    });
   }
 
-  function openViewer(src) {
-    document.getElementById('viewerImg').src = src;
-    document.getElementById('viewer').classList.add('active');
+  function renderArchive() {
+    const folder = folders.find(f => f.id === currentFolderId);
+    const archivedPhotos = folder?.photos.filter(p => p.archived) || [];
+    const archiveGrid = document.getElementById('archiveGrid');
+    const archiveCountSpan = document.getElementById('archiveCount');
+    
+    archiveCountSpan.textContent = `(${archivedPhotos.length})`;
+    
+    if (archivedPhotos.length === 0) {
+      archiveGrid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:#6c6c70;">Нет выполненных образов</div>';
+      return;
+    }
+    
+    archiveGrid.innerHTML = '';
+    archivedPhotos.forEach(photo => {
+      const card = document.createElement('div');
+      card.className = 'archive-photo';
+      card.innerHTML = `
+        <img src="${photo.src}" loading="lazy">
+        <div class="archive-actions">
+          <button class="restore-btn" data-id="${photo.id}">↩️ Вернуть</button>
+          <button class="delete-btn" data-id="${photo.id}">🗑</button>
+        </div>
+      `;
+      card.querySelector('img').onclick = () => openViewer(photo.src);
+      card.querySelector('.restore-btn').onclick = (e) => { e.stopPropagation(); toggleArchive(photo.id); };
+      card.querySelector('.delete-btn').onclick = (e) => { e.stopPropagation(); deletePhoto(photo.id); };
+      archiveGrid.appendChild(card);
+    });
   }
 
   function escapeHtml(str) {
-    return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
+    if (!str) return '';
+    return str.replace(/[&<>]/g, (m) => {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
   }
 
-  function selectPhotos() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.multiple = true;
-    input.onchange = (e) => {
-      Array.from(e.target.files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = ev => addPhoto(ev.target.result);
-        reader.readAsDataURL(file);
-      });
-    };
-    input.click();
-  }
-
-  function renderAll() {
-    renderFolders();
-    renderPhotos();
-  }
-
-  // === СОБЫТИЯ ===
+  // ========== ИНИЦИАЛИЗАЦИЯ ==========
   document.getElementById('addPhotoBtn').onclick = () => selectPhotos();
-  document.getElementById('viewerClose').onclick = () => document.getElementById('viewer').classList.remove('active');
+  document.getElementById('viewerClose').onclick = () => closeViewer();
+  document.getElementById('viewer').onclick = (e) => { if (e.target === document.getElementById('viewer')) closeViewer(); };
+  
   document.getElementById('archiveHeader').onclick = () => {
-    archiveOpen = !archiveOpen;
+    archiveExpanded = !archiveExpanded;
     const header = document.getElementById('archiveHeader');
     const grid = document.getElementById('archiveGrid');
-    header.classList.toggle('open', archiveOpen);
-    grid.classList.toggle('open', archiveOpen);
+    header.classList.toggle('open', archiveExpanded);
+    grid.classList.toggle('open', archiveExpanded);
   };
-  document.getElementById('cancelFolderBtn').onclick = () => document.getElementById('folderDialog').classList.remove('active');
+  
+  document.getElementById('cancelFolderBtn').onclick = () => {
+    document.getElementById('folderDialog').classList.remove('active');
+  };
   document.getElementById('confirmFolderBtn').onclick = () => {
     const name = document.getElementById('newFolderName').value.trim();
     if (name) createFolder(name);
     document.getElementById('folderDialog').classList.remove('active');
-    document.getElementById('newFolderName').value = '';
   };
-
+  
   load();
 </script>
 </body>
