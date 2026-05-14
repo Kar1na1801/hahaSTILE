@@ -20,11 +20,34 @@
     h1 {
       font-size: 34px;
       font-weight: 700;
-      margin-bottom: 20px;
+      margin-bottom: 8px;
       background: linear-gradient(135deg, #fff, #8e8e93);
       background-clip: text;
       -webkit-background-clip: text;
       color: transparent;
+    }
+    .stats {
+      background: #1c1c1e;
+      border-radius: 16px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .stat-item {
+      text-align: center;
+      flex: 1;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #3a7a3a;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: #8e8e93;
     }
     .folders {
       display: flex;
@@ -85,13 +108,15 @@
       right: 6px;
       display: flex;
       gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
     .photo-buttons button {
       background: rgba(0,0,0,0.7);
       border: none;
       border-radius: 20px;
       padding: 4px 8px;
-      font-size: 11px;
+      font-size: 10px;
       color: white;
       cursor: pointer;
     }
@@ -167,7 +192,7 @@
       padding: 20px;
       width: 280px;
     }
-    .modal-content input {
+    .modal-content input, .modal-content select {
       width: 100%;
       padding: 12px;
       background: #2c2c2e;
@@ -226,6 +251,21 @@
 
 <h1>Гардероб</h1>
 
+<div class="stats" id="statsPanel">
+  <div class="stat-item">
+    <div class="stat-value" id="statTotal">0</div>
+    <div class="stat-label">Всего фото</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value" id="statImportant">0</div>
+    <div class="stat-label">⭐ Важные</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value" id="statArchived">0</div>
+    <div class="stat-label">📦 В архиве</div>
+  </div>
+</div>
+
 <div class="folders" id="foldersList"></div>
 
 <div id="photosContainer" class="photos"></div>
@@ -261,6 +301,17 @@
   </div>
 </div>
 
+<div id="copyModal" class="modal">
+  <div class="modal-content">
+    <h3>Копировать в папку</h3>
+    <select id="copyFolderSelect"></select>
+    <div class="modal-buttons">
+      <button id="cancelCopyBtn">Отмена</button>
+      <button id="confirmCopyBtn" style="background:#3a7a3a;">Копировать</button>
+    </div>
+  </div>
+</div>
+
 <div id="viewer" class="viewer">
   <button class="viewer-close" id="closeViewerBtn">✕</button>
   <img id="viewerImg" src="">
@@ -272,8 +323,9 @@
   let currentFolderId = null;
   let archiveOpen = false;
   let pendingRenameId = null;
+  let pendingCopyPhoto = null;
 
-  const STORAGE_KEY = 'wardrobe_simple_v2';
+  const STORAGE_KEY = 'wardrobe_final_v3';
 
   // ID
   function genId() {
@@ -288,7 +340,9 @@
         const data = JSON.parse(saved);
         folders = data.folders || [];
         currentFolderId = data.currentFolderId;
-      } catch(e) {}
+      } catch(e) {
+        console.error('Ошибка загрузки', e);
+      }
     }
     if (!folders.length) {
       folders = [
@@ -299,12 +353,17 @@
       ];
       currentFolderId = folders[0].id;
     }
+    if (!folders.some(f => f.id === currentFolderId)) {
+      currentFolderId = folders[0]?.id || null;
+    }
     render();
     save();
   }
 
   function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ folders, currentFolderId }));
+    const dataToSave = { folders, currentFolderId };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+    console.log('Сохранено:', dataToSave);
   }
 
   // ПАПКИ
@@ -354,7 +413,6 @@
       archived: false,
       date: Date.now()
     });
-    // Сортируем: важные в начало
     sortPhotos(folder);
     render();
     save();
@@ -362,9 +420,8 @@
 
   function sortPhotos(folder) {
     folder.photos.sort((a, b) => {
-      // Сначала важные
+      if (a.archived !== b.archived) return a.archived ? 1 : -1;
       if (a.important !== b.important) return a.important ? -1 : 1;
-      // Потом по дате (новые сверху)
       return b.date - a.date;
     });
   }
@@ -401,6 +458,25 @@
     }
   }
 
+  function copyPhotoToFolder(photo, fromFolderId, toFolderId) {
+    const toFolder = folders.find(f => f.id === toFolderId);
+    if (!toFolder) return;
+    
+    // Создаём копию фото с новым ID
+    const copy = {
+      id: genId(),
+      src: photo.src,
+      important: photo.important,
+      archived: false,
+      date: Date.now()
+    };
+    toFolder.photos.push(copy);
+    sortPhotos(toFolder);
+    render();
+    save();
+    alert(`Фото скопировано в папку "${toFolder.name}"`);
+  }
+
   // ВЫБОР ФОТО
   function pickPhotos() {
     const input = document.createElement('input');
@@ -424,11 +500,26 @@
     document.getElementById('viewer').classList.add('active');
   }
 
+  // СТАТИСТИКА
+  function updateStats() {
+    const folder = folders.find(f => f.id === currentFolderId);
+    if (!folder) return;
+    
+    const total = folder.photos.length;
+    const important = folder.photos.filter(p => p.important && !p.archived).length;
+    const archived = folder.photos.filter(p => p.archived).length;
+    
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statImportant').textContent = important;
+    document.getElementById('statArchived').textContent = archived;
+  }
+
   // ОТРИСОВКА
   function render() {
     renderFolders();
     renderPhotos();
     renderArchive();
+    updateStats();
   }
 
   function renderFolders() {
@@ -489,12 +580,17 @@
         <div class="photo-buttons">
           <button class="star-btn">⭐</button>
           <button class="archive-btn">📦</button>
+          <button class="copy-btn">📋 Копировать</button>
           <button class="delete-btn">🗑</button>
         </div>
       `;
       div.querySelector('img').onclick = () => openViewer(photo.src);
       div.querySelector('.star-btn').onclick = (e) => { e.stopPropagation(); toggleImportant(photo.id); };
       div.querySelector('.archive-btn').onclick = (e) => { e.stopPropagation(); toggleArchive(photo.id); };
+      div.querySelector('.copy-btn').onclick = (e) => { 
+        e.stopPropagation(); 
+        openCopyModal(photo);
+      };
       div.querySelector('.delete-btn').onclick = (e) => { e.stopPropagation(); deletePhoto(photo.id); };
       container.appendChild(div);
     });
@@ -530,6 +626,25 @@
       div.querySelector('.delete-btn').onclick = (e) => { e.stopPropagation(); deletePhoto(photo.id); };
       container.appendChild(div);
     });
+  }
+
+  function openCopyModal(photo) {
+    pendingCopyPhoto = photo;
+    const select = document.getElementById('copyFolderSelect');
+    select.innerHTML = '';
+    folders.forEach(folder => {
+      if (folder.id !== currentFolderId) {
+        const option = document.createElement('option');
+        option.value = folder.id;
+        option.textContent = folder.name;
+        select.appendChild(option);
+      }
+    });
+    if (select.options.length === 0) {
+      alert('Нет других папок для копирования');
+      return;
+    }
+    document.getElementById('copyModal').classList.add('active');
   }
 
   function escapeHtml(str) {
@@ -569,7 +684,7 @@
     const name = document.getElementById('folderNameInput').value.trim();
     if (name) addFolder(name);
     document.getElementById('folderModal').classList.remove('active');
-    document.getElementById('folderNameInput').value = ''; // очищаем
+    document.getElementById('folderNameInput').value = '';
   };
   
   // Модалка переименования
@@ -584,6 +699,20 @@
     }
     document.getElementById('renameModal').classList.remove('active');
     pendingRenameId = null;
+  };
+  
+  // Модалка копирования
+  document.getElementById('cancelCopyBtn').onclick = () => {
+    document.getElementById('copyModal').classList.remove('active');
+    pendingCopyPhoto = null;
+  };
+  document.getElementById('confirmCopyBtn').onclick = () => {
+    const targetFolderId = document.getElementById('copyFolderSelect').value;
+    if (targetFolderId && pendingCopyPhoto) {
+      copyPhotoToFolder(pendingCopyPhoto, currentFolderId, targetFolderId);
+    }
+    document.getElementById('copyModal').classList.remove('active');
+    pendingCopyPhoto = null;
   };
 
   load();
