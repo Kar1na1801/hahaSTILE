@@ -15,37 +15,35 @@
       background: #000;
       font-family: -apple-system, BlinkMacSystemFont, system-ui;
       color: white;
-      padding: 20px 16px 80px;
+      padding: 16px 12px 80px;
     }
     h1 {
-      font-size: 34px;
+      font-size: 32px;
       font-weight: 700;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
       background: linear-gradient(135deg, #fff, #8e8e93);
       background-clip: text;
       -webkit-background-clip: text;
       color: transparent;
     }
-    /* Статистика */
     .stats {
       background: #1c1c1e;
       border-radius: 16px;
-      padding: 12px 16px;
+      padding: 12px;
       margin-bottom: 20px;
       display: flex;
       justify-content: space-around;
       text-align: center;
     }
     .stat-num {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 700;
       color: #3a7a3a;
     }
     .stat-label {
-      font-size: 11px;
+      font-size: 10px;
       color: #8e8e93;
     }
-    /* Папки */
     .folders {
       display: flex;
       gap: 10px;
@@ -57,12 +55,9 @@
       background: #1c1c1e;
       padding: 10px 18px;
       border-radius: 30px;
-      font-size: 15px;
+      font-size: 14px;
       white-space: nowrap;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
     .folder.active {
       background: #3a7a3a;
@@ -73,6 +68,7 @@
       color: #aaa;
       font-size: 12px;
       cursor: pointer;
+      margin-left: 6px;
     }
     .add-folder {
       background: #2c2c2e;
@@ -81,18 +77,17 @@
       cursor: pointer;
       white-space: nowrap;
     }
-    /* Сетка фото */
     .photos {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 3px;
+      gap: 4px;
       margin-bottom: 20px;
     }
     .photo {
       position: relative;
       aspect-ratio: 1;
       background: #1c1c1e;
-      border-radius: 8px;
+      border-radius: 10px;
       overflow: hidden;
     }
     .photo img {
@@ -105,7 +100,7 @@
       bottom: 6px;
       right: 6px;
       display: flex;
-      gap: 5px;
+      gap: 6px;
     }
     .photo-buttons button {
       background: rgba(0,0,0,0.7);
@@ -126,7 +121,6 @@
       font-size: 10px;
       color: #ffd966;
     }
-    /* Архив */
     .archive-header {
       display: flex;
       align-items: center;
@@ -134,18 +128,16 @@
       cursor: pointer;
       padding: 12px 0;
       border-top: 1px solid #2c2c2e;
-      margin-top: 8px;
     }
     .archive-list {
       display: none;
       grid-template-columns: repeat(3, 1fr);
-      gap: 3px;
+      gap: 4px;
       margin-top: 12px;
     }
     .archive-list.open {
       display: grid;
     }
-    /* Кнопка добавления */
     .fab {
       position: fixed;
       bottom: 20px;
@@ -168,7 +160,6 @@
       color: #6c6c70;
       grid-column: 1/-1;
     }
-    /* Модалки */
     .modal {
       position: fixed;
       top: 0;
@@ -213,7 +204,6 @@
       color: white;
       cursor: pointer;
     }
-    /* Просмотр фото */
     .viewer {
       position: fixed;
       top: 0;
@@ -251,9 +241,9 @@
 <h1>👗 Гардероб</h1>
 
 <div class="stats">
-  <div><div class="stat-num" id="statTotal">0</div><div class="stat-label">всего</div></div>
-  <div><div class="stat-num" id="statImportant">0</div><div class="stat-label">⭐ важные</div></div>
-  <div><div class="stat-num" id="statArchived">0</div><div class="stat-label">📦 архив</div></div>
+  <div><div class="stat-num" id="totalCount">0</div><div class="stat-label">всего</div></div>
+  <div><div class="stat-num" id="importantCount">0</div><div class="stat-label">⭐ важные</div></div>
+  <div><div class="stat-num" id="archivedCount">0</div><div class="stat-label">📦 архив</div></div>
 </div>
 
 <div class="folders" id="foldersList"></div>
@@ -263,20 +253,19 @@
 <div class="archive-header" id="archiveToggle">
   <span id="archiveArrow">▶</span>
   <span>📦 Выполненные</span>
-  <span id="archiveCount"></span>
+  <span id="archiveCounter"></span>
 </div>
 <div id="archiveList" class="archive-list"></div>
 
 <div class="fab" id="addBtn">+</div>
 
-<!-- Модалки -->
 <div id="folderModal" class="modal">
   <div class="modal-box">
     <h3>Новая папка</h3>
     <input type="text" id="newFolderName" placeholder="Название">
     <div class="modal-buttons">
-      <button id="cancelFolderBtn">Отмена</button>
-      <button id="createFolderBtn" style="background:#3a7a3a;">Создать</button>
+      <button id="cancelFolder">Отмена</button>
+      <button id="createFolder" style="background:#3a7a3a;">Создать</button>
     </div>
   </div>
 </div>
@@ -286,8 +275,8 @@
     <h3>Переименовать</h3>
     <input type="text" id="renameInput" placeholder="Новое название">
     <div class="modal-buttons">
-      <button id="cancelRenameBtn">Отмена</button>
-      <button id="confirmRenameBtn" style="background:#3a7a3a;">Сохранить</button>
+      <button id="cancelRename">Отмена</button>
+      <button id="confirmRename" style="background:#3a7a3a;">Сохранить</button>
     </div>
   </div>
 </div>
@@ -297,14 +286,14 @@
     <h3>Копировать в папку</h3>
     <select id="copySelect"></select>
     <div class="modal-buttons">
-      <button id="cancelCopyBtn">Отмена</button>
-      <button id="confirmCopyBtn" style="background:#3a7a3a;">Копировать</button>
+      <button id="cancelCopy">Отмена</button>
+      <button id="confirmCopy" style="background:#3a7a3a;">Копировать</button>
     </div>
   </div>
 </div>
 
 <div id="viewer" class="viewer">
-  <button class="viewer-close" id="closeViewerBtn">✕</button>
+  <button class="viewer-close" id="closeViewer">✕</button>
   <img id="viewerImg" src="">
 </div>
 
@@ -313,29 +302,26 @@
   let folders = [];
   let currentFolderId = null;
   let archiveOpen = false;
-  let pendingRenameId = null;
-  let pendingCopyPhoto = null;
+  let renameTargetId = null;
+  let copyTargetPhoto = null;
 
-  const STORAGE_KEY = 'garderob_full';
+  const KEY = 'wardrobe_work';
 
-  // ========== ID ==========
+  // ID
   function genId() {
-    return Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+    return Date.now() + '_' + Math.random().toString(36).substring(2, 10);
   }
 
   // ========== СОХРАНЕНИЕ ==========
   function save() {
-    const data = {
-      folders: folders,
-      currentFolderId: currentFolderId
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    console.log('💾 Сохранено, папок:', folders.length);
+    const data = { folders, currentFolderId };
+    localStorage.setItem(KEY, JSON.stringify(data));
+    console.log('Сохранено');
   }
 
   // ========== ЗАГРУЗКА ==========
   function load() {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(KEY);
     if (saved) {
       try {
         const data = JSON.parse(saved);
@@ -346,10 +332,10 @@
     
     if (!folders || folders.length === 0) {
       folders = [
-        { id: genId(), name: '☀️ Лето', photos: [] },
-        { id: genId(), name: '🍂 Осень', photos: [] },
-        { id: genId(), name: '❄️ Зима', photos: [] },
-        { id: genId(), name: '🌸 Весна', photos: [] }
+        { id: genId(), name: 'Лето', photos: [] },
+        { id: genId(), name: 'Осень', photos: [] },
+        { id: genId(), name: 'Зима', photos: [] },
+        { id: genId(), name: 'Весна', photos: [] }
       ];
       currentFolderId = folders[0].id;
     }
@@ -359,13 +345,12 @@
     }
     
     render();
-    console.log('📂 Загружено, папок:', folders.length);
   }
 
   // ========== ПАПКИ ==========
-  function addFolder(name) {
+  function createFolder(name) {
     if (!name.trim()) return;
-    if (folders.some(f => f.name.toLowerCase() === name.toLowerCase().trim())) {
+    if (folders.some(f => f.name === name.trim())) {
       alert('Такая папка уже есть');
       return;
     }
@@ -453,7 +438,7 @@
     }
   }
 
-  function copyPhotoToFolder(photo, toFolderId) {
+  function copyPhoto(photo, toFolderId) {
     const toFolder = folders.find(f => f.id === toFolderId);
     if (!toFolder) return;
     toFolder.photos.push({
@@ -466,11 +451,11 @@
     sortPhotos(toFolder);
     save();
     render();
-    alert(`Скопировано в "${toFolder.name}"`);
+    alert('Скопировано!');
   }
 
   // ========== ВЫБОР ФОТО ==========
-  function pickPhotos() {
+  function selectPhotos() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
@@ -496,12 +481,9 @@
   function updateStats() {
     const folder = folders.find(f => f.id === currentFolderId);
     if (!folder) return;
-    const total = folder.photos.length;
-    const important = folder.photos.filter(p => p.important && !p.archived).length;
-    const archived = folder.photos.filter(p => p.archived).length;
-    document.getElementById('statTotal').textContent = total;
-    document.getElementById('statImportant').textContent = important;
-    document.getElementById('statArchived').textContent = archived;
+    document.getElementById('totalCount').innerText = folder.photos.length;
+    document.getElementById('importantCount').innerText = folder.photos.filter(p => p.important && !p.archived).length;
+    document.getElementById('archivedCount').innerText = folder.photos.filter(p => p.archived).length;
   }
 
   // ========== ОТРИСОВКА ==========
@@ -519,14 +501,11 @@
     folders.forEach(folder => {
       const div = document.createElement('div');
       div.className = `folder ${currentFolderId === folder.id ? 'active' : ''}`;
-      div.innerHTML = `
-        <span>${escapeHtml(folder.name)}</span>
-        <button class="folder-edit" data-id="${folder.id}">✏️</button>
-      `;
+      div.innerHTML = `${folder.name} <button class="folder-edit" data-id="${folder.id}">✏️</button>`;
       div.onclick = (e) => {
         if (e.target.classList.contains('folder-edit')) {
           e.stopPropagation();
-          pendingRenameId = folder.id;
+          renameTargetId = folder.id;
           document.getElementById('renameInput').value = folder.name;
           document.getElementById('renameModal').classList.add('open');
         } else {
@@ -538,14 +517,14 @@
       container.appendChild(div);
     });
     
-    const addDiv = document.createElement('div');
-    addDiv.className = 'add-folder';
-    addDiv.textContent = '+ Новая';
-    addDiv.onclick = () => {
+    const addBtn = document.createElement('div');
+    addBtn.className = 'add-folder';
+    addBtn.innerText = '+ Новая';
+    addBtn.onclick = () => {
       document.getElementById('folderModal').classList.add('open');
       document.getElementById('newFolderName').value = '';
     };
-    container.appendChild(addDiv);
+    container.appendChild(addBtn);
   }
 
   function renderPhotos() {
@@ -554,7 +533,7 @@
     const container = document.getElementById('photosList');
     
     if (active.length === 0) {
-      container.innerHTML = '<div class="empty">📸 Нет фото<br>Нажмите + в правом нижнем углу</div>';
+      container.innerHTML = '<div class="empty">📸 Нет фото<br>Нажмите + внизу справа</div>';
       return;
     }
     
@@ -566,18 +545,19 @@
         <img src="${photo.src}">
         ${photo.important ? '<div class="important-badge">⭐ Важно</div>' : ''}
         <div class="photo-buttons">
-          <button class="star-btn">⭐</button>
-          <button class="archive-btn">📦</button>
-          <button class="copy-btn">📋</button>
-          <button class="delete-btn">🗑</button>
+          <button class="star">⭐</button>
+          <button class="archive">📦</button>
+          <button class="copy">📋</button>
+          <button class="delete">🗑</button>
         </div>
       `;
+      
       div.querySelector('img').onclick = () => openViewer(photo.src);
-      div.querySelector('.star-btn').onclick = (e) => { e.stopPropagation(); toggleImportant(photo.id); };
-      div.querySelector('.archive-btn').onclick = (e) => { e.stopPropagation(); toggleArchive(photo.id); };
-      div.querySelector('.copy-btn').onclick = (e) => {
+      div.querySelector('.star').onclick = (e) => { e.stopPropagation(); toggleImportant(photo.id); };
+      div.querySelector('.archive').onclick = (e) => { e.stopPropagation(); toggleArchive(photo.id); };
+      div.querySelector('.copy').onclick = (e) => {
         e.stopPropagation();
-        pendingCopyPhoto = photo;
+        copyTargetPhoto = photo;
         const select = document.getElementById('copySelect');
         select.innerHTML = '';
         folders.forEach(f => {
@@ -594,7 +574,8 @@
           alert('Нет других папок');
         }
       };
-      div.querySelector('.delete-btn').onclick = (e) => { e.stopPropagation(); deletePhoto(photo.id); };
+      div.querySelector('.delete').onclick = (e) => { e.stopPropagation(); deletePhoto(photo.id); };
+      
       container.appendChild(div);
     });
   }
@@ -603,11 +584,11 @@
     const folder = folders.find(f => f.id === currentFolderId);
     const archived = folder?.photos.filter(p => p.archived) || [];
     const container = document.getElementById('archiveList');
-    const counter = document.getElementById('archiveCount');
-    counter.textContent = `(${archived.length})`;
+    const counter = document.getElementById('archiveCounter');
+    counter.innerText = `(${archived.length})`;
     
     if (archived.length === 0) {
-      container.innerHTML = '<div class="empty" style="padding:20px;">Пусто</div>';
+      container.innerHTML = '<div class="empty" style="padding:20px;">Нет выполненных</div>';
       return;
     }
     
@@ -619,61 +600,55 @@
       div.innerHTML = `
         <img src="${photo.src}">
         <div class="photo-buttons">
-          <button class="restore-btn">↩️</button>
-          <button class="delete-btn">🗑</button>
+          <button class="restore">↩️</button>
+          <button class="delete">🗑</button>
         </div>
       `;
       div.querySelector('img').onclick = () => openViewer(photo.src);
-      div.querySelector('.restore-btn').onclick = (e) => { e.stopPropagation(); toggleArchive(photo.id); };
-      div.querySelector('.delete-btn').onclick = (e) => { e.stopPropagation(); deletePhoto(photo.id); };
+      div.querySelector('.restore').onclick = (e) => { e.stopPropagation(); toggleArchive(photo.id); };
+      div.querySelector('.delete').onclick = (e) => { e.stopPropagation(); deletePhoto(photo.id); };
       container.appendChild(div);
     });
   }
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, (m) => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
-  }
-
   // ========== СОБЫТИЯ ==========
-  document.getElementById('addBtn').onclick = () => pickPhotos();
-  document.getElementById('closeViewerBtn').onclick = () => document.getElementById('viewer').classList.remove('open');
+  document.getElementById('addBtn').onclick = () => selectPhotos();
+  document.getElementById('closeViewer').onclick = () => document.getElementById('viewer').classList.remove('open');
   document.getElementById('viewer').onclick = (e) => {
     if (e.target === document.getElementById('viewer')) document.getElementById('viewer').classList.remove('open');
   };
   document.getElementById('archiveToggle').onclick = () => {
     archiveOpen = !archiveOpen;
-    document.getElementById('archiveArrow').textContent = archiveOpen ? '▼' : '▶';
+    document.getElementById('archiveArrow').innerText = archiveOpen ? '▼' : '▶';
     document.getElementById('archiveList').classList.toggle('open', archiveOpen);
   };
   
   // Модалка папки
-  document.getElementById('cancelFolderBtn').onclick = () => document.getElementById('folderModal').classList.remove('open');
-  document.getElementById('createFolderBtn').onclick = () => {
+  document.getElementById('cancelFolder').onclick = () => document.getElementById('folderModal').classList.remove('open');
+  document.getElementById('createFolder').onclick = () => {
     const name = document.getElementById('newFolderName').value.trim();
-    if (name) addFolder(name);
+    if (name) createFolder(name);
     document.getElementById('folderModal').classList.remove('open');
   };
   
   // Модалка переименования
-  document.getElementById('cancelRenameBtn').onclick = () => document.getElementById('renameModal').classList.remove('open');
-  document.getElementById('confirmRenameBtn').onclick = () => {
+  document.getElementById('cancelRename').onclick = () => document.getElementById('renameModal').classList.remove('open');
+  document.getElementById('confirmRename').onclick = () => {
     const name = document.getElementById('renameInput').value.trim();
-    if (name && pendingRenameId) renameFolder(pendingRenameId, name);
+    if (name && renameTargetId) renameFolder(renameTargetId, name);
     document.getElementById('renameModal').classList.remove('open');
-    pendingRenameId = null;
+    renameTargetId = null;
   };
   
   // Модалка копирования
-  document.getElementById('cancelCopyBtn').onclick = () => document.getElementById('copyModal').classList.remove('open');
-  document.getElementById('confirmCopyBtn').onclick = () => {
+  document.getElementById('cancelCopy').onclick = () => document.getElementById('copyModal').classList.remove('open');
+  document.getElementById('confirmCopy').onclick = () => {
     const toId = document.getElementById('copySelect').value;
-    if (toId && pendingCopyPhoto) copyPhotoToFolder(pendingCopyPhoto, toId);
+    if (toId && copyTargetPhoto) copyPhoto(copyTargetPhoto, toId);
     document.getElementById('copyModal').classList.remove('open');
-    pendingCopyPhoto = null;
+    copyTargetPhoto = null;
   };
 
-  // ЗАПУСК
   load();
 </script>
 </body>
